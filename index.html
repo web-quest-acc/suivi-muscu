@@ -3,143 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Suivi Muscu</title>
+    <title>Mon Suivi Muscu V2</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
         h2 { text-align: center; color: #333; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
         label { display: block; margin-top: 10px; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Nouveau style pour le poids du corps */
+        .profile-section { background-color: #e3f2fd; border-left: 5px solid #2196F3; }
+        
+        /* Checkbox style */
+        .checkbox-container { display: flex; align-items: center; margin-top: 15px; background: #eee; padding: 10px; border-radius: 4px;}
+        .checkbox-container input { width: auto; margin-right: 10px; }
+        
         button { width: 100%; background-color: #28a745; color: white; border: none; padding: 10px; margin-top: 20px; border-radius: 4px; font-size: 16px; cursor: pointer; }
-        button:hover { background-color: #218838; }
+        button.update-weight { background-color: #2196F3; margin-top: 10px; }
+        
         .chart-container { position: relative; height: 300px; width: 100%; }
     </style>
 </head>
 <body>
 
-    <h2>💪 Mon Tracker Muscu</h2>
+    <h2>💪 Tracker & Poids de Corps</h2>
+
+    <div class="card profile-section">
+        <label>Mon Poids de Corps Actuel (kg)</label>
+        <input type="number" id="bodyWeight" placeholder="Ex: 75">
+        <button class="update-weight" onclick="saveBodyWeight()">Mettre à jour mon poids</button>
+    </div>
 
     <div class="card">
-        <label>Exercice</label>
-        <select id="exerciseSelect" onchange="updateChart()">
-            <option value="Développé Couché">Développé Couché</option>
-            <option value="Squat">Squat</option>
-            <option value="Soulevé de Terre">Soulevé de Terre</option>
-            <option value="Traction">Traction</option>
-            <option value="Military Press">Military Press</option>
-        </select>
+        <label>Nom de l'exercice</label>
+        <input type="text" id="exerciseName" list="exerciseHistory" placeholder="Ex: Tractions, Squat..." onchange="updateChart()">
+        
+        <datalist id="exerciseHistory"></datalist>
 
-        <label>Poids (kg)</label>
-        <input type="number" id="weight" placeholder="Ex: 80">
+        <div class="checkbox-container">
+            <input type="checkbox" id="isBodyWeightExercise">
+            <label for="isBodyWeightExercise" style="margin:0; font-weight:normal;">C'est un exo Poids du corps (Tractions, Dips...)</label>
+        </div>
 
-        <label>Répétitions</label>
-        <input type="number" id="reps" placeholder="Ex: 10">
+        <label>Poids ajouté / Lest (ou barre)</label>
+        <input type="number" id="addedWeight" placeholder="Mettre 0 si poids du corps seul, ou négatif (-10) si assisté">
 
-        <label>Séries</label>
-        <input type="number" id="sets" placeholder="Ex: 4">
+        <div style="display: flex; gap: 10px;">
+            <div style="flex:1">
+                <label>Répétitions</label>
+                <input type="number" id="reps" placeholder="10">
+            </div>
+            <div style="flex:1">
+                <label>Séries</label>
+                <input type="number" id="sets" placeholder="4">
+            </div>
+        </div>
 
         <button onclick="addSession()">Enregistrer la séance</button>
     </div>
 
     <div class="card">
-        <h3>Progression : <span id="currentExerciseName">Développé Couché</span></h3>
+        <h3>Progression : <span id="currentExerciseDisplay">...</span></h3>
         <div class="chart-container">
             <canvas id="progressChart"></canvas>
         </div>
     </div>
 
     <script>
-        // 1. Initialisation des variables
-        const STORAGE_KEY = 'muscu_data_v1';
+        const DATA_KEY = 'muscu_data_v1';
+        const PROFILE_KEY = 'user_body_weight';
         let myChart = null;
 
-        // 2. Fonction pour récupérer les données stockées
+        // --- GESTION DU PROFIL (POIDS) ---
+        function loadBodyWeight() {
+            const savedWeight = localStorage.getItem(PROFILE_KEY);
+            if(savedWeight) {
+                document.getElementById('bodyWeight').value = savedWeight;
+            }
+        }
+
+        function saveBodyWeight() {
+            const weight = document.getElementById('bodyWeight').value;
+            if(weight) {
+                localStorage.setItem(PROFILE_KEY, weight);
+                alert("Poids de corps mis à jour !");
+            }
+        }
+
+        // --- GESTION DES DONNÉES MUSCU ---
         function getData() {
-            const data = localStorage.getItem(STORAGE_KEY);
+            const data = localStorage.getItem(DATA_KEY);
             return data ? JSON.parse(data) : {}; 
         }
 
-        // 3. Fonction pour sauvegarder une séance
+        // Met à jour la liste d'autocomplétion (datalist)
+        function updateDatalist() {
+            const db = getData();
+            const dataList = document.getElementById('exerciseHistory');
+            dataList.innerHTML = ''; // On vide
+            // On ajoute chaque exercice existant comme option
+            Object.keys(db).forEach(exoName => {
+                const option = document.createElement('option');
+                option.value = exoName;
+                dataList.appendChild(option);
+            });
+        }
+
         function addSession() {
-            const exercise = document.getElementById('exerciseSelect').value;
-            const weight = document.getElementById('weight').value;
+            // Nettoyage du nom (enlève les espaces inutiles)
+            let exercise = document.getElementById('exerciseName').value.trim();
+            // Met une majuscule au début pour faire propre
+            exercise = exercise.charAt(0).toUpperCase() + exercise.slice(1);
+
+            const addedWeight = parseFloat(document.getElementById('addedWeight').value);
             const reps = document.getElementById('reps').value;
             const sets = document.getElementById('sets').value;
-            const date = new Date().toLocaleDateString('fr-FR');
+            const isBodyWeight = document.getElementById('isBodyWeightExercise').checked;
+            
+            // Récupération du poids du corps actuel
+            const currentBodyWeight = parseFloat(document.getElementById('bodyWeight').value || 0);
 
-            if(!weight || !reps || !sets) {
-                alert("Remplis toutes les cases !");
+            if(!exercise || isNaN(addedWeight) || !reps || !sets) {
+                alert("Merci de tout remplir (mettre 0 pour le poids si besoin)");
                 return;
             }
 
-            // On récupère l'objet existant
-            let db = getData();
-
-            // Si l'exercice n'existe pas encore, on crée un tableau vide
-            if (!db[exercise]) {
-                db[exercise] = [];
+            // --- CALCUL MAGIQUE ---
+            let totalLoad = addedWeight;
+            if (isBodyWeight) {
+                if(currentBodyWeight === 0) {
+                    alert("Attention : Cochez 'Poids du corps' mais votre poids de corps est à 0 ou vide !");
+                    return;
+                }
+                totalLoad = currentBodyWeight + addedWeight;
             }
+            // ---------------------
 
-            // On ajoute la nouvelle séance
-            db[exercise].push({ date, weight, reps, sets });
+            let db = getData();
+            if (!db[exercise]) db[exercise] = [];
 
-            // On sauvegarde dans le navigateur
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+            const date = new Date().toLocaleDateString('fr-FR');
+            
+            // On stocke le 'totalLoad' pour le graphique, mais on garde le détail pour info si besoin
+            db[exercise].push({ 
+                date, 
+                totalLoad, // C'est ce qu'on affichera sur le graph
+                reps, 
+                sets,
+                isBodyWeight,
+                usedBodyWeight: currentBodyWeight, // On garde en mémoire quel poids tu faisais ce jour là
+                addedWeight: addedWeight
+            });
 
-            // On vide les champs et on met à jour le graph
-            document.getElementById('weight').value = '';
-            document.getElementById('reps').value = '';
+            localStorage.setItem(DATA_KEY, JSON.stringify(db));
+
+            alert(`Séance enregistrée ! Charge totale estimée : ${totalLoad} kg`);
+            updateDatalist(); // Met à jour la liste des suggestions
             updateChart();
-            alert('Séance enregistrée !');
         }
 
-        // 4. Fonction pour dessiner/mettre à jour le graphique
         function updateChart() {
-            const exercise = document.getElementById('exerciseSelect').value;
-            document.getElementById('currentExerciseName').innerText = exercise;
+            let exercise = document.getElementById('exerciseName').value.trim();
+            // On gère la majuscule pour retrouver la clé dans la base
+            if(exercise) exercise = exercise.charAt(0).toUpperCase() + exercise.slice(1);
             
+            document.getElementById('currentExerciseDisplay').innerText = exercise || "...";
+
             const db = getData();
             const sessions = db[exercise] || [];
 
-            // Préparation des données pour Chart.js
             const labels = sessions.map(s => s.date);
-            const dataPoints = sessions.map(s => s.weight); // On trace le POIDS
+            // Compatibilité : si c'est une vieille donnée (v1), on prend 'weight', sinon 'totalLoad'
+            const dataPoints = sessions.map(s => s.totalLoad !== undefined ? s.totalLoad : s.weight);
 
             const ctx = document.getElementById('progressChart').getContext('2d');
+            if (myChart) myChart.destroy();
 
-            // Si un graphique existe déjà, on le détruit pour en faire un nouveau
-            if (myChart) {
-                myChart.destroy();
-            }
-
-            // Création du nouveau graphique
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Poids soulevé (kg)',
+                        label: 'Charge Totale (Poids corps + Lest)',
                         data: dataPoints,
-                        borderColor: '#28a745',
-                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.2)',
                         borderWidth: 2,
                         fill: true,
-                        tension: 0.3 // Courbe légèrement arrondie
+                        tension: 0.3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: false } // Le graph ne commence pas forcément à 0
-                    }
+                    scales: { y: { beginAtZero: false } }
                 }
             });
         }
 
-        // Au chargement de la page, on affiche le graph par défaut
-        window.onload = updateChart;
+        // Au démarrage
+        window.onload = function() {
+            loadBodyWeight();
+            updateDatalist();
+        };
     </script>
 </body>
 </html>
