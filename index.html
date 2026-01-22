@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Suivi Muscu</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        h2 { text-align: center; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background-color: #28a745; color: white; border: none; padding: 10px; margin-top: 20px; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <h2>💪 Mon Tracker Muscu</h2>
+
+    <div class="card">
+        <label>Exercice</label>
+        <select id="exerciseSelect" onchange="updateChart()">
+            <option value="Développé Couché">Développé Couché</option>
+            <option value="Squat">Squat</option>
+            <option value="Soulevé de Terre">Soulevé de Terre</option>
+            <option value="Traction">Traction</option>
+            <option value="Military Press">Military Press</option>
+        </select>
+
+        <label>Poids (kg)</label>
+        <input type="number" id="weight" placeholder="Ex: 80">
+
+        <label>Répétitions</label>
+        <input type="number" id="reps" placeholder="Ex: 10">
+
+        <label>Séries</label>
+        <input type="number" id="sets" placeholder="Ex: 4">
+
+        <button onclick="addSession()">Enregistrer la séance</button>
+    </div>
+
+    <div class="card">
+        <h3>Progression : <span id="currentExerciseName">Développé Couché</span></h3>
+        <div class="chart-container">
+            <canvas id="progressChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // 1. Initialisation des variables
+        const STORAGE_KEY = 'muscu_data_v1';
+        let myChart = null;
+
+        // 2. Fonction pour récupérer les données stockées
+        function getData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {}; 
+        }
+
+        // 3. Fonction pour sauvegarder une séance
+        function addSession() {
+            const exercise = document.getElementById('exerciseSelect').value;
+            const weight = document.getElementById('weight').value;
+            const reps = document.getElementById('reps').value;
+            const sets = document.getElementById('sets').value;
+            const date = new Date().toLocaleDateString('fr-FR');
+
+            if(!weight || !reps || !sets) {
+                alert("Remplis toutes les cases !");
+                return;
+            }
+
+            // On récupère l'objet existant
+            let db = getData();
+
+            // Si l'exercice n'existe pas encore, on crée un tableau vide
+            if (!db[exercise]) {
+                db[exercise] = [];
+            }
+
+            // On ajoute la nouvelle séance
+            db[exercise].push({ date, weight, reps, sets });
+
+            // On sauvegarde dans le navigateur
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+
+            // On vide les champs et on met à jour le graph
+            document.getElementById('weight').value = '';
+            document.getElementById('reps').value = '';
+            updateChart();
+            alert('Séance enregistrée !');
+        }
+
+        // 4. Fonction pour dessiner/mettre à jour le graphique
+        function updateChart() {
+            const exercise = document.getElementById('exerciseSelect').value;
+            document.getElementById('currentExerciseName').innerText = exercise;
+            
+            const db = getData();
+            const sessions = db[exercise] || [];
+
+            // Préparation des données pour Chart.js
+            const labels = sessions.map(s => s.date);
+            const dataPoints = sessions.map(s => s.weight); // On trace le POIDS
+
+            const ctx = document.getElementById('progressChart').getContext('2d');
+
+            // Si un graphique existe déjà, on le détruit pour en faire un nouveau
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            // Création du nouveau graphique
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Poids soulevé (kg)',
+                        data: dataPoints,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3 // Courbe légèrement arrondie
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: false } // Le graph ne commence pas forcément à 0
+                    }
+                }
+            });
+        }
+
+        // Au chargement de la page, on affiche le graph par défaut
+        window.onload = updateChart;
+    </script>
+</body>
+</html>
