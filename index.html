@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muscu App V4</title>
+    <title>Muscu App V5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; }
         body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 80px;}
         
-        /* Navigation */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 15px 0; z-index: 100; }
         .nav-item { cursor: pointer; color: #999; font-weight: bold; text-align: center; flex: 1; }
         .nav-item.active { color: var(--primary); }
@@ -28,31 +27,39 @@
         .btn-danger { background-color: #ff5252; }
         .btn-outline { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
 
-        /* NOUVEAU : SELECTEUR DE MODE A 3 BOUTONS */
         .mode-selector { display: flex; gap: 5px; margin-bottom: 15px; }
         .mode-btn { flex: 1; padding: 10px 5px; font-size: 12px; text-align: center; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
-        
-        /* Couleurs spécifiques par mode quand actif */
         .mode-btn.active-std { background-color: var(--primary); color: white; border-color: var(--primary); }
         .mode-btn.active-bw { background-color: var(--accent); color: white; border-color: var(--accent); }
         .mode-btn.active-time { background-color: #607d8b; color: white; border-color: #607d8b; }
 
         .set-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9em; }
         .session-item { border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 15px; }
-        .session-item.type-bw { border-left-color: var(--accent); } /* Orange pour poids du corps */
+        .session-item.type-bw { border-left-color: var(--accent); } 
         
         .chart-container { position: relative; height: 250px; width: 100%; }
         
-        /* Input Poids du corps discret */
-        .bw-input-container { display: flex; align-items: center; justify-content: space-between; background: #fff3e0; padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid #ffe0b2; }
+        /* CORRECTION : Style plus visible pour l'entrée du poids */
+        .weight-input-box { background-color: white; padding: 15px; border-radius: 8px; border-left: 5px solid var(--accent); margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
     </style>
 </head>
 <body>
 
     <div id="view-history" class="view active">
-        <h2>📅 Mes Sessions</h2>
+        <h2>📅 Tableau de bord</h2>
+        
+        <div class="weight-input-box">
+            <div>
+                <strong>Mon Poids Actuel (kg)</strong><br>
+                <small style="color:#666">Nécessaire pour le calcul PDC</small>
+            </div>
+            <input type="number" id="currentBodyWeight" style="width: 80px; text-align:center; font-size: 1.2em; border: 2px solid #eee;" placeholder="Ex: 75" onchange="saveUserWeight()">
+        </div>
+
+        <h3>Dernières Séances</h3>
         <div id="historyList"></div>
         <div style="height: 60px;"></div>
+        
         <button class="btn-success" onclick="startNewSession()" style="position:fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
             + NOUVELLE SÉANCE
         </button>
@@ -64,11 +71,6 @@
             <button class="btn-danger" style="width:auto; padding: 5px 12px; margin:0;" onclick="cancelSession()">X</button>
         </div>
 
-        <div class="bw-input-container">
-            <span style="font-size: 0.9em; color: #e65100;">Mon Poids (kg) pour le calcul :</span>
-            <input type="number" id="currentBodyWeight" style="width: 80px; margin:0; text-align:center;" onchange="saveUserWeight()">
-        </div>
-        
         <div class="card">
             <h3>Ajouter un exercice</h3>
             <input type="text" id="exoName" list="exoSuggestions" placeholder="Nom (ex: Squat, Tractions...)">
@@ -122,9 +124,9 @@
                 <canvas id="progChart"></canvas>
             </div>
             <p style="font-size: 0.8em; color: #666; margin-top: 15px; line-height: 1.4;">
-                <strong>Note :</strong><br>
-                • Pour la "Fonte", le graph affiche le poids de la barre.<br>
-                • Pour le "Poids du Corps", il affiche (Ton Poids + Lest).
+                <strong>Comprendre le graphique :</strong><br>
+                • Fonte : Affiche le poids de la barre.<br>
+                • Poids du Corps : Affiche (Ton Poids + Lest).
             </p>
         </div>
     </div>
@@ -140,18 +142,15 @@
 
         let currentSession = null;
         let bufferSets = [];
-        let currentMode = 'standard'; // standard | bodyweight | time
+        let currentMode = 'standard'; 
         let myChart = null;
 
-        // --- INIT ---
         window.onload = function() {
             renderHistory();
-            // Charger le poids utilisateur sauvegardé
             const savedWeight = localStorage.getItem(USER_WEIGHT_KEY);
             if(savedWeight) document.getElementById('currentBodyWeight').value = savedWeight;
         }
 
-        // --- NAVIGATION ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
@@ -163,23 +162,18 @@
             if(viewId === 'view-stats') initStats();
         }
 
-        // --- GESTION POIDS UTILISATEUR ---
         function saveUserWeight() {
             const w = document.getElementById('currentBodyWeight').value;
             if(w) localStorage.setItem(USER_WEIGHT_KEY, w);
         }
 
-        // --- SELECTION DU MODE ---
         function setMode(mode) {
             currentMode = mode;
-            
-            // Gestion visuelle des boutons
-            document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn'); // Reset
+            document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn'); 
             if(mode === 'standard') document.getElementById('btn-std').classList.add('active-std');
             if(mode === 'bodyweight') document.getElementById('btn-bw').classList.add('active-bw');
             if(mode === 'time') document.getElementById('btn-time').classList.add('active-time');
 
-            // Gestion des Labels et Placeholders
             const l1 = document.getElementById('labelVal1');
             const i1 = document.getElementById('inputVal1');
             const l2 = document.getElementById('labelVal2');
@@ -192,7 +186,7 @@
                 i2.placeholder = "Ex: 10";
             } else if (mode === 'bodyweight') {
                 l1.innerText = "Lest ajouté (kg)";
-                i1.placeholder = "0 = Rien, 10 = Lest, -10 = Elastique";
+                i1.placeholder = "0 = Rien, -10 = Elastique";
                 l2.innerText = "Répétitions";
                 i2.placeholder = "Ex: 8";
             } else {
@@ -203,19 +197,23 @@
             }
         }
 
-        // --- WORKFLOW SEANCE ---
         function startNewSession() {
             const w = document.getElementById('currentBodyWeight').value;
-            if(!w) { alert("Entre ton poids de corps en haut d'abord !"); return; }
+            // On vérifie le poids ICI, maintenant que le champ est accessible
+            if(!w) { 
+                alert("Entre d'abord ton poids actuel en haut de la page d'accueil !"); 
+                // On met le focus sur le champ pour aider l'utilisateur
+                document.getElementById('currentBodyWeight').focus();
+                return; 
+            }
             
             currentSession = { 
                 date: new Date().toISOString(), 
-                userWeightAtTime: parseFloat(w), // On fige le poids pour cette séance
+                userWeightAtTime: parseFloat(w), 
                 exercises: [] 
             };
             bufferSets = [];
             
-            // Clean UI
             document.getElementById('exoName').value = '';
             document.getElementById('bufferList').innerHTML = '<em style="color:#999; font-size:0.9em;">Ajoute des séries ci-dessus...</em>';
             document.getElementById('currentSessionList').innerHTML = '';
@@ -237,12 +235,12 @@
             let val2 = document.getElementById('inputVal2').value;
 
             if(!val2) { alert("Manque Reps ou Temps !"); return; }
-            if(currentMode !== 'time' && !val1) val1 = 0; // Si vide en mode poids, on met 0
+            if(currentMode !== 'time' && !val1) val1 = 0; 
             if(currentMode === 'standard' && !val1) { alert("En mode Fonte, il faut un poids !"); return;}
 
             bufferSets.push({
-                val1: parseFloat(val1 || 0), // Poids ou Lest
-                val2: parseFloat(val2),      // Reps ou Temps
+                val1: parseFloat(val1 || 0), 
+                val2: parseFloat(val2),      
                 mode: currentMode
             });
             renderBuffer();
@@ -274,7 +272,7 @@
             currentSession.exercises.push({
                 name: name.charAt(0).toUpperCase() + name.slice(1),
                 sets: [...bufferSets],
-                type: bufferSets[0].mode // On assume que toutes les séries ont le même mode
+                type: bufferSets[0].mode 
             });
 
             bufferSets = [];
@@ -290,10 +288,9 @@
             const div = document.getElementById('currentSessionList');
             let html = '';
             currentSession.exercises.forEach(exo => {
-                // Création du résumé
                 const setsText = exo.sets.map(s => {
                     if(exo.type === 'time') return s.val2 + 's';
-                    return s.val2; // Juste les reps
+                    return s.val2;
                 }).join(' / ');
                 
                 let info = "";
@@ -321,7 +318,6 @@
             switchView('view-history');
         }
 
-        // --- AFFICHAGE HISTORIQUE ---
         function renderHistory() {
             const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
             db.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -338,11 +334,9 @@
                     let summary = '';
                     
                     if(e.type === 'standard') {
-                        // Ex: 3 séries (Max 80kg)
                         const maxW = Math.max(...e.sets.map(s => s.val1));
                         summary = `${e.sets.length} séries @ ${maxW}kg (max)`;
                     } else if (e.type === 'bodyweight') {
-                        // Ex: 3 séries (PDC+10kg)
                         const maxLest = Math.max(...e.sets.map(s => s.val1));
                         const sign = maxLest >= 0 ? '+' : '';
                         summary = `${e.sets.length} séries @ PDC${sign}${maxLest}kg`;
@@ -363,7 +357,6 @@
             list.innerHTML = html || '<p style="text-align:center; color:#999;">Pas de séance.</p>';
         }
 
-        // --- STATS ---
         function initStats() {
             const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
             const select = document.getElementById('statExoSelect');
@@ -382,28 +375,23 @@
         function updateChart() {
             const exoName = document.getElementById('statExoSelect').value;
             const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-            db.sort((a, b) => new Date(a.date) - new Date(b.date)); // Chronologique
+            db.sort((a, b) => new Date(a.date) - new Date(b.date)); 
 
             const labels = [];
             const data = [];
 
             db.forEach(sess => {
-                // On cherche l'exo dans cette session
                 const match = sess.exercises.find(e => e.name === exoName);
                 if(match) {
                     labels.push(new Date(sess.date).toLocaleDateString('fr-FR'));
                     
-                    // CALCUL DE LA VALEUR A AFFICHER
                     let bestVal = 0;
                     
                     if(match.type === 'time') {
-                        // Max temps
                         bestVal = Math.max(...match.sets.map(s => s.val2)); 
                     } else if (match.type === 'standard') {
-                        // Max poids barre
                         bestVal = Math.max(...match.sets.map(s => s.val1));
                     } else if (match.type === 'bodyweight') {
-                        // Max (Poids User à ce moment là + Lest)
                         const maxLest = Math.max(...match.sets.map(s => s.val1));
                         bestVal = sess.userWeightAtTime + maxLest;
                     }
