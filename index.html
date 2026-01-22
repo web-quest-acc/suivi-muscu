@@ -3,210 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Suivi Muscu V2</title>
+    <title>Muscu App V3</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
-        h2 { text-align: center; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
-        input[type="text"], input[type="number"] { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; }
+        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 80px;}
         
-        /* Nouveau style pour le poids du corps */
-        .profile-section { background-color: #e3f2fd; border-left: 5px solid #2196F3; }
+        /* Navigation en bas */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 15px 0; z-index: 100; }
+        .nav-item { cursor: pointer; color: #666; font-weight: bold; text-align: center; flex: 1; }
+        .nav-item.active { color: var(--primary); }
+
+        /* Vues (Pages) */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* Composants */
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h2, h3 { margin-top: 0; color: #333; }
         
-        /* Checkbox style */
-        .checkbox-container { display: flex; align-items: center; margin-top: 15px; background: #eee; padding: 10px; border-radius: 4px;}
-        .checkbox-container input { width: auto; margin-right: 10px; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         
-        button { width: 100%; background-color: #28a745; color: white; border: none; padding: 10px; margin-top: 20px; border-radius: 4px; font-size: 16px; cursor: pointer; }
-        button.update-weight { background-color: #2196F3; margin-top: 10px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; color: white; margin-top: 10px;}
+        .btn-primary { background-color: var(--primary); }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: #f44336; }
+        .btn-outline { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
+
+        /* Liste des séries en cours */
+        .set-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; }
+        .session-item { border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 10px; }
         
-        .chart-container { position: relative; height: 300px; width: 100%; }
+        /* Toggle Temps/Reps */
+        .mode-toggle { display: flex; gap: 10px; margin-bottom: 10px; }
+        .mode-btn { flex: 1; padding: 8px; text-align: center; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+        .mode-btn.selected { background-color: var(--primary); color: white; border-color: var(--primary); }
+
+        .chart-container { position: relative; height: 250px; width: 100%; }
+        .summary-detail { font-size: 0.9em; color: #555; margin-left: 15px; }
     </style>
 </head>
 <body>
 
-    <h2>💪 Tracker & Poids de Corps</h2>
-
-    <div class="card profile-section">
-        <label>Mon Poids de Corps Actuel (kg)</label>
-        <input type="number" id="bodyWeight" placeholder="Ex: 75">
-        <button class="update-weight" onclick="saveBodyWeight()">Mettre à jour mon poids</button>
+    <div id="view-history" class="view active">
+        <h2>📅 Mes Sessions</h2>
+        <div id="historyList"></div>
+        <div style="height: 50px;"></div> <button class="btn-success" onclick="startNewSession()" style="position:fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; shadow: 0 4px 10px rgba(0,0,0,0.2);">
+            + Commencer une séance
+        </button>
     </div>
 
-    <div class="card">
-        <label>Nom de l'exercice</label>
-        <input type="text" id="exerciseName" list="exerciseHistory" placeholder="Ex: Tractions, Squat..." onchange="updateChart()">
+    <div id="view-workout" class="view">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2>🔥 Séance en cours</h2>
+            <button class="btn-danger" style="width:auto; padding: 5px 10px; margin:0;" onclick="cancelSession()">X</button>
+        </div>
         
-        <datalist id="exerciseHistory"></datalist>
+        <div class="card">
+            <h3>Ajouter un exercice</h3>
+            <input type="text" id="exoName" list="exoSuggestions" placeholder="Nom (ex: Squat, Planche...)">
+            <datalist id="exoSuggestions"></datalist>
 
-        <div class="checkbox-container">
-            <input type="checkbox" id="isBodyWeightExercise">
-            <label for="isBodyWeightExercise" style="margin:0; font-weight:normal;">C'est un exo Poids du corps (Tractions, Dips...)</label>
+            <div class="mode-toggle">
+                <div class="mode-btn selected" id="modeReps" onclick="setMode('reps')">Répétitions</div>
+                <div class="mode-btn" id="modeTime" onclick="setMode('time')">Temps (Chrono)</div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1">
+                    <label id="labelVal1">Poids (kg)</label>
+                    <input type="number" id="inputVal1" placeholder="80">
+                </div>
+                <div style="flex:1">
+                    <label id="labelVal2">Répétitions</label>
+                    <input type="number" id="inputVal2" placeholder="10">
+                </div>
+            </div>
+
+            <button class="btn-outline" onclick="addSetToBuffer()">Ajouter la série</button>
+
+            <div id="bufferList" style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 4px;">
+                <em>Aucune série ajoutée pour cet exercice...</em>
+            </div>
+
+            <button class="btn-primary" onclick="confirmExercise()">Valider l'exercice</button>
         </div>
 
-        <label>Poids ajouté / Lest (ou barre)</label>
-        <input type="number" id="addedWeight" placeholder="Mettre 0 si poids du corps seul, ou négatif (-10) si assisté">
+        <h3>Déjà fait aujourd'hui :</h3>
+        <div id="currentSessionList"></div>
 
-        <div style="display: flex; gap: 10px;">
-            <div style="flex:1">
-                <label>Répétitions</label>
-                <input type="number" id="reps" placeholder="10">
-            </div>
-            <div style="flex:1">
-                <label>Séries</label>
-                <input type="number" id="sets" placeholder="4">
-            </div>
-        </div>
-
-        <button onclick="addSession()">Enregistrer la séance</button>
+        <button class="btn-success" onclick="finishSession()">Terminer et Sauvegarder la séance</button>
     </div>
 
-    <div class="card">
-        <h3>Progression : <span id="currentExerciseDisplay">...</span></h3>
-        <div class="chart-container">
-            <canvas id="progressChart"></canvas>
+    <div id="view-stats" class="view">
+        <h2>📈 Ma Progression</h2>
+        <div class="card">
+            <label>Choisir un exercice</label>
+            <select id="statExoSelect" onchange="updateChart()"></select>
+            <div class="chart-container">
+                <canvas id="progChart"></canvas>
+            </div>
+            <p style="font-size: 0.8em; color: #666; text-align: center; margin-top: 10px;">
+                *Pour le graphique, on prend la meilleure perf (Max Poids ou Max Temps) de chaque séance.
+            </p>
         </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchView('view-history', this)">Sessions</div>
+        <div class="nav-item" onclick="switchView('view-stats', this)">Stats</div>
     </div>
 
     <script>
-        const DATA_KEY = 'muscu_data_v1';
-        const PROFILE_KEY = 'user_body_weight';
+        // --- CONFIGURATION ---
+        const DB_KEY = 'muscu_app_v3';
+        let currentSession = { date: null, exercises: [] };
+        let bufferSets = []; // Séries en attente de validation pour l'exercice en cours
+        let currentMode = 'reps'; // 'reps' ou 'time'
         let myChart = null;
 
-        // --- GESTION DU PROFIL (POIDS) ---
-        function loadBodyWeight() {
-            const savedWeight = localStorage.getItem(PROFILE_KEY);
-            if(savedWeight) {
-                document.getElementById('bodyWeight').value = savedWeight;
-            }
-        }
-
-        function saveBodyWeight() {
-            const weight = document.getElementById('bodyWeight').value;
-            if(weight) {
-                localStorage.setItem(PROFILE_KEY, weight);
-                alert("Poids de corps mis à jour !");
-            }
-        }
-
-        // --- GESTION DES DONNÉES MUSCU ---
-        function getData() {
-            const data = localStorage.getItem(DATA_KEY);
-            return data ? JSON.parse(data) : {}; 
-        }
-
-        // Met à jour la liste d'autocomplétion (datalist)
-        function updateDatalist() {
-            const db = getData();
-            const dataList = document.getElementById('exerciseHistory');
-            dataList.innerHTML = ''; // On vide
-            // On ajoute chaque exercice existant comme option
-            Object.keys(db).forEach(exoName => {
-                const option = document.createElement('option');
-                option.value = exoName;
-                dataList.appendChild(option);
-            });
-        }
-
-        function addSession() {
-            // Nettoyage du nom (enlève les espaces inutiles)
-            let exercise = document.getElementById('exerciseName').value.trim();
-            // Met une majuscule au début pour faire propre
-            exercise = exercise.charAt(0).toUpperCase() + exercise.slice(1);
-
-            const addedWeight = parseFloat(document.getElementById('addedWeight').value);
-            const reps = document.getElementById('reps').value;
-            const sets = document.getElementById('sets').value;
-            const isBodyWeight = document.getElementById('isBodyWeightExercise').checked;
+        // --- GESTION DES VUES ---
+        function switchView(viewId, navElement) {
+            // Masquer toutes les vues
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            // Afficher la vue demandée
+            document.getElementById(viewId).classList.add('active');
             
-            // Récupération du poids du corps actuel
-            const currentBodyWeight = parseFloat(document.getElementById('bodyWeight').value || 0);
+            // Gérer la nav active
+            if(navElement) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                navElement.classList.add('active');
+            }
 
-            if(!exercise || isNaN(addedWeight) || !reps || !sets) {
-                alert("Merci de tout remplir (mettre 0 pour le poids si besoin)");
+            if(viewId === 'view-history') renderHistory();
+            if(viewId === 'view-stats') initStats();
+        }
+
+        // --- LOGIQUE SÉANCE ---
+        function startNewSession() {
+            currentSession = { 
+                date: new Date().toISOString(), 
+                exercises: [] 
+            };
+            bufferSets = [];
+            renderBuffer();
+            renderCurrentSession();
+            
+            // Reset des champs
+            document.getElementById('exoName').value = '';
+            document.getElementById('inputVal1').value = '';
+            document.getElementById('inputVal2').value = '';
+
+            // Afficher la vue Workout
+            switchView('view-workout');
+            // Cacher la navbar pendant la séance pour éviter de quitter par erreur
+            document.querySelector('.nav-bar').style.display = 'none';
+        }
+
+        function cancelSession() {
+            if(confirm("Annuler la séance en cours ? Tout sera perdu.")) {
+                document.querySelector('.nav-bar').style.display = 'flex';
+                switchView('view-history');
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeReps').className = mode === 'reps' ? 'mode-btn selected' : 'mode-btn';
+            document.getElementById('modeTime').className = mode === 'time' ? 'mode-btn selected' : 'mode-btn';
+
+            if(mode === 'reps') {
+                document.getElementById('labelVal1').innerText = "Poids (kg)";
+                document.getElementById('labelVal2').innerText = "Répétitions";
+                document.getElementById('inputVal1').placeholder = "80";
+            } else {
+                document.getElementById('labelVal1').innerText = "Lest (kg) (Optionnel)";
+                document.getElementById('labelVal2').innerText = "Temps (secondes)";
+                document.getElementById('inputVal1').placeholder = "0";
+            }
+        }
+
+        function addSetToBuffer() {
+            const val1 = document.getElementById('inputVal1').value; // Poids
+            const val2 = document.getElementById('inputVal2').value; // Reps ou Temps
+
+            if(!val2) { alert("Il faut au moins des reps ou du temps !"); return; }
+
+            bufferSets.push({
+                val1: val1 || 0, // Poids (peut être 0)
+                val2: val2,      // Reps ou Temps
+                mode: currentMode
+            });
+
+            renderBuffer();
+        }
+
+        function renderBuffer() {
+            const container = document.getElementById('bufferList');
+            if (bufferSets.length === 0) {
+                container.innerHTML = '<em>Aucune série ajoutée...</em>';
+                return;
+            }
+            let html = '<ul>';
+            bufferSets.forEach((set, index) => {
+                const unit = set.mode === 'reps' ? 'reps' : 'sec';
+                html += `<li>Série ${index+1}: <strong>${set.val2} ${unit}</strong> @ ${set.val1}kg</li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        function confirmExercise() {
+            const name = document.getElementById('exoName').value;
+            if(!name || bufferSets.length === 0) {
+                alert("Nom d'exercice manquant ou aucune série ajoutée.");
                 return;
             }
 
-            // --- CALCUL MAGIQUE ---
-            let totalLoad = addedWeight;
-            if (isBodyWeight) {
-                if(currentBodyWeight === 0) {
-                    alert("Attention : Cochez 'Poids du corps' mais votre poids de corps est à 0 ou vide !");
-                    return;
-                }
-                totalLoad = currentBodyWeight + addedWeight;
-            }
-            // ---------------------
-
-            let db = getData();
-            if (!db[exercise]) db[exercise] = [];
-
-            const date = new Date().toLocaleDateString('fr-FR');
-            
-            // On stocke le 'totalLoad' pour le graphique, mais on garde le détail pour info si besoin
-            db[exercise].push({ 
-                date, 
-                totalLoad, // C'est ce qu'on affichera sur le graph
-                reps, 
-                sets,
-                isBodyWeight,
-                usedBodyWeight: currentBodyWeight, // On garde en mémoire quel poids tu faisais ce jour là
-                addedWeight: addedWeight
+            // Ajouter l'exercice complet à la session
+            currentSession.exercises.push({
+                name: name.charAt(0).toUpperCase() + name.slice(1),
+                sets: [...bufferSets] // Copie du tableau
             });
 
-            localStorage.setItem(DATA_KEY, JSON.stringify(db));
+            // Reset pour le prochain exo
+            bufferSets = [];
+            document.getElementById('exoName').value = '';
+            document.getElementById('inputVal1').value = '';
+            document.getElementById('inputVal2').value = '';
+            renderBuffer();
+            renderCurrentSession();
+        }
 
-            alert(`Séance enregistrée ! Charge totale estimée : ${totalLoad} kg`);
-            updateDatalist(); // Met à jour la liste des suggestions
-            updateChart();
+        function renderCurrentSession() {
+            const container = document.getElementById('currentSessionList');
+            let html = '';
+            currentSession.exercises.forEach((exo, idx) => {
+                // Créer une string type "10/10/8"
+                const setsSummary = exo.sets.map(s => s.val2).join(' / ');
+                const maxWeight = Math.max(...exo.sets.map(s => parseFloat(s.val1)));
+                
+                html += `<div class="session-item">
+                            <strong>${exo.name}</strong><br>
+                            <small>${exo.sets.length} séries : ${setsSummary} (${exo.sets[0].mode === 'reps' ? 'Max '+maxWeight+'kg' : 'Temps'})</small>
+                         </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function finishSession() {
+            if(currentSession.exercises.length === 0) {
+                alert("La séance est vide !");
+                return;
+            }
+            
+            // Sauvegarde en DB
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            db.push(currentSession);
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+            alert("Séance sauvegardée ! Bravo 💪");
+            document.querySelector('.nav-bar').style.display = 'flex';
+            switchView('view-history');
+        }
+
+        // --- HISTORIQUE & STATS ---
+        function renderHistory() {
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            const container = document.getElementById('historyList');
+            
+            // Trier par date décroissante (plus récent en haut)
+            db.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let html = '';
+            db.forEach(session => {
+                const dateObj = new Date(session.date);
+                const dateStr = dateObj.toLocaleDateString('fr-FR') + ' à ' + dateObj.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+                
+                let details = '';
+                session.exercises.forEach(exo => {
+                    const setsStr = exo.sets.map(s => s.val2).join('/');
+                    const unit = exo.sets[0]?.mode === 'reps' ? 'reps' : 'sec';
+                    // On affiche le poids de la première série pour info
+                    const weightInfo = exo.sets[0]?.val1 > 0 ? `@ ${exo.sets[0].val1}kg` : '';
+                    details += `<div class="summary-detail">• ${exo.name}: ${setsStr} ${unit} ${weightInfo}</div>`;
+                });
+
+                html += `<div class="card">
+                            <h3 style="margin-bottom:5px;">Séance du ${dateStr}</h3>
+                            ${details}
+                         </div>`;
+            });
+            container.innerHTML = html || '<p style="text-align:center">Aucune séance enregistrée.</p>';
+        }
+
+        function initStats() {
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            const select = document.getElementById('statExoSelect');
+            const uniqueExos = new Set();
+            
+            db.forEach(s => s.exercises.forEach(e => uniqueExos.add(e.name)));
+            
+            select.innerHTML = '';
+            uniqueExos.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                select.appendChild(opt);
+            });
+            
+            if(uniqueExos.size > 0) updateChart();
         }
 
         function updateChart() {
-            let exercise = document.getElementById('exerciseName').value.trim();
-            // On gère la majuscule pour retrouver la clé dans la base
-            if(exercise) exercise = exercise.charAt(0).toUpperCase() + exercise.slice(1);
+            const exoName = document.getElementById('statExoSelect').value;
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
             
-            document.getElementById('currentExerciseDisplay').innerText = exercise || "...";
+            // On extrait les données pour cet exo
+            // On prend la date de la séance, et la MEILLEURE perf de la séance (Max Poids ou Max Temps)
+            const dataPoints = [];
+            const labels = [];
 
-            const db = getData();
-            const sessions = db[exercise] || [];
+            // Trier du plus vieux au plus récent pour le graph
+            db.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            const labels = sessions.map(s => s.date);
-            // Compatibilité : si c'est une vieille donnée (v1), on prend 'weight', sinon 'totalLoad'
-            const dataPoints = sessions.map(s => s.totalLoad !== undefined ? s.totalLoad : s.weight);
+            db.forEach(session => {
+                const sessionDate = new Date(session.date).toLocaleDateString('fr-FR');
+                
+                // Chercher si l'exercice a été fait dans cette session
+                const exercises = session.exercises.filter(e => e.name === exoName);
+                
+                exercises.forEach(e => {
+                    // Trouver la meilleure perf de la session
+                    // Si c'est Reps : on prend le Poids Max
+                    // Si c'est Temps : on prend le Temps Max
+                    let maxVal = 0;
+                    e.sets.forEach(s => {
+                        const valToCheck = s.mode === 'reps' ? parseFloat(s.val1) : parseFloat(s.val2);
+                        if(valToCheck > maxVal) maxVal = valToCheck;
+                    });
 
-            const ctx = document.getElementById('progressChart').getContext('2d');
-            if (myChart) myChart.destroy();
+                    labels.push(sessionDate);
+                    dataPoints.push(maxVal);
+                });
+            });
+
+            const ctx = document.getElementById('progChart').getContext('2d');
+            if(myChart) myChart.destroy();
 
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Charge Totale (Poids corps + Lest)',
+                        label: 'Meilleure Perf (Kg ou Sec)',
                         data: dataPoints,
                         borderColor: '#2196F3',
-                        backgroundColor: 'rgba(33, 150, 243, 0.2)',
-                        borderWidth: 2,
+                        tension: 0.3,
                         fill: true,
-                        tension: 0.3
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)'
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: false } }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
-
-        // Au démarrage
-        window.onload = function() {
-            loadBodyWeight();
-            updateDatalist();
-        };
+        
+        // Init au chargement
+        renderHistory();
     </script>
 </body>
 </html>
