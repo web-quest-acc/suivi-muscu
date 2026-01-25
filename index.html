@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muscu App V7 - Cycles EMOM</title>
+    <title>Muscu App V8 - Cycles Complets</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; --dark: #333; --grey: #9e9e9e; }
+        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; --dark: #333; }
         body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 90px; user-select: none; }
         
         /* Navigation */
@@ -50,14 +50,12 @@
         .week-item.done { opacity: 0.6; text-decoration: line-through; background-color: #f9f9f9; }
         .week-item.active { background-color: #e3f2fd; border-left: 4px solid var(--primary); font-weight: bold; border-radius: 4px; }
         .week-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; color:white; }
-        .badge-vol { background: #2196F3; }
-        .badge-int { background: #ff9800; }
-        .badge-del { background: #4CAF50; }
         
         .timer-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 200; display:none; flex-direction:column; align-items:center; justify-content:center; }
         .timer-display { font-size: 90px; font-weight: bold; color: var(--dark); font-variant-numeric: tabular-nums; }
         
         .archive-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9em; color: #666; }
+        .load-badge { background-color: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: #555; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
@@ -126,24 +124,32 @@
     </div>
 
     <div id="view-emom" class="view">
-        <h2>⏱️ Programme EMOM</h2>
+        <h2>⏱️ Cycles EMOM</h2>
         
         <div id="emom-create" class="card" style="display:none;">
-            <h3>🚀 Créer un Cycle (6 semaines)</h3>
-            <label>Exercice Cible</label>
-            <input type="text" id="newCycleExo" placeholder="Ex: Tractions, Dips...">
+            <h3>🚀 Nouveau Cycle (6 semaines)</h3>
+            <label>Exercice</label>
+            <input type="text" id="newCycleExo" placeholder="Ex: Tractions...">
+            
+            <label>Assistance / Lest (Note pour toi)</label>
+            <input type="text" id="newCycleLoad" placeholder="Ex: Élastique Violet, Machine -20kg...">
+            <small style="color:#666; display:block; margin-bottom:10px;">Sera affiché à chaque séance pour ne pas oublier.</small>
+
             <label>Répétitions de base (par minute)</label>
-            <input type="number" id="newCycleReps" placeholder="Ex: 5 (Ta zone de confort)">
-            <button class="btn-primary" onclick="createEmomCycle()">Générer la Feuille de Route</button>
+            <input type="number" id="newCycleReps" placeholder="Ex: 5">
+            
+            <button class="btn-primary" onclick="createEmomCycle()">Générer le Programme</button>
         </div>
 
         <div id="emom-active" style="display:none;">
             <div class="card" style="border-left: 5px solid var(--primary);">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3 id="cycleTitle" style="margin:0;">Cycle Tractions</h3>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <h3 id="cycleTitle" style="margin:0;">Cycle Tractions</h3>
+                        <div id="cycleLoadDisplay" class="load-badge" style="display:inline-block; margin-top:5px;">Poids du corps</div>
+                    </div>
                     <button class="btn-danger" style="width:auto; padding:5px 10px; margin:0; font-size:0.8em;" onclick="deleteCycle()">Arrêter</button>
                 </div>
-                <p style="color:#666; font-size:0.9em; margin-top:5px;">Objectif : Tenir la technique parfaite sous fatigue.</p>
             </div>
 
             <div class="card">
@@ -162,7 +168,8 @@
 
     <div id="timer-overlay" class="timer-overlay">
         <h2 id="timerExoTitle">Tractions</h2>
-        <p id="timerGoal">Objectif: 5 reps / minute</p>
+        <p id="timerLoadInfo" style="color:#f57c00; font-weight:bold;">...</p>
+        <p id="timerGoal" style="font-size:1.2em; margin-bottom:10px;">...</p>
         
         <div class="timer-display" id="timerBigDisplay">00:00</div>
         <div style="font-size:2em; margin-bottom:20px; color:#666;" id="timerRoundDisplay">Round 1/10</div>
@@ -172,7 +179,6 @@
             <button class="btn-danger" onclick="stopTimerEngine()" id="btnStop" style="display:none;">STOP & VALIDER</button>
              <button class="btn-outline" onclick="closeTimer()" id="btnCloseTimer" style="display:none;">Fermer</button>
         </div>
-        <p style="margin-top:20px; color:#888;">Bip à 30s (mi-temps) et 10s (fin)</p>
     </div>
 
     <div class="nav-bar">
@@ -182,12 +188,10 @@
     </div>
 
     <script>
-        // --- CONFIG ---
         const DB_KEY = 'muscu_app_v4';
         const USER_WEIGHT_KEY = 'user_weight_v4';
-        const EMOM_KEY = 'emom_cycles_v1';
+        const EMOM_KEY = 'emom_cycles_v2'; // Nouvelle clé V2
 
-        // --- VARS GLOBALES ---
         let currentSession = null;
         let bufferSets = [];
         let currentMode = 'standard'; 
@@ -208,7 +212,6 @@
             if(savedWeight) document.getElementById('currentBodyWeight').value = savedWeight;
         }
 
-        // --- NAVIGATION ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
@@ -221,62 +224,50 @@
             if(viewId === 'view-emom') renderEmomView();
         }
 
-        // --- GESTION EMOM / CYCLES ---
-        function getEmomData() {
-            return JSON.parse(localStorage.getItem(EMOM_KEY) || '{ "active": null, "archives": [] }');
-        }
-
-        function saveEmomData(data) {
-            localStorage.setItem(EMOM_KEY, JSON.stringify(data));
-        }
+        // --- GESTION EMOM ---
+        function getEmomData() { return JSON.parse(localStorage.getItem(EMOM_KEY) || '{ "active": null, "archives": [] }'); }
+        function saveEmomData(data) { localStorage.setItem(EMOM_KEY, JSON.stringify(data)); }
 
         function createEmomCycle() {
             const exo = document.getElementById('newCycleExo').value;
+            const load = document.getElementById('newCycleLoad').value || "Poids du corps"; // Par défaut
             const base = parseInt(document.getElementById('newCycleReps').value);
             
-            if(!exo || !base) { alert("Remplis les infos !"); return; }
+            if(!exo || !base) { alert("Remplis l'exercice et les reps !"); return; }
 
-            // Logique de progression sur 6 semaines (WAVE LOADING)
             const weeks = [
                 { id: 1, duration: 10, reps: base, label: "Volume (Base)", done: false },
                 { id: 2, duration: 12, reps: base, label: "Volume (+)", done: false },
                 { id: 3, duration: 15, reps: base, label: "Volume (Max)", done: false },
-                { id: 4, duration: 10, reps: base + 1, label: "Densité (+1 rep)", done: false }, // +1 rep
+                { id: 4, duration: 10, reps: base + 1, label: "Densité (+1 rep)", done: false },
                 { id: 5, duration: 12, reps: base + 1, label: "Overreach", done: false },
-                { id: 6, duration: 10, reps: Math.ceil(base/2), label: "Deload (Repos)", done: false } // Deload
+                { id: 6, duration: 10, reps: Math.ceil(base/2), label: "Deload", done: false }
             ];
 
-            const newCycle = {
-                exo: exo,
-                baseReps: base,
-                startDate: new Date().toISOString(),
-                weeks: weeks
-            };
-
+            const newCycle = { exo, load, baseReps: base, startDate: new Date().toISOString(), weeks };
             const data = getEmomData();
             data.active = newCycle;
             saveEmomData(data);
-
             renderEmomView();
         }
 
         function renderEmomView() {
             const data = getEmomData();
             
-            // Affichage Archives
             const archiveDiv = document.getElementById('emom-archives');
             archiveDiv.innerHTML = '';
             data.archives.forEach(c => {
                 const dateStr = new Date(c.startDate).toLocaleDateString();
-                archiveDiv.innerHTML += `<div class="archive-item">✅ Cycle <strong>${c.exo}</strong> (${dateStr})</div>`;
+                const loadStr = c.load ? `(${c.load})` : '';
+                archiveDiv.innerHTML += `<div class="archive-item">✅ <strong>${c.exo}</strong> ${loadStr} <br><small>${dateStr}</small></div>`;
             });
 
-            // Affichage Actif ou Création
             if(data.active) {
                 activeCycle = data.active;
                 document.getElementById('emom-create').style.display = 'none';
                 document.getElementById('emom-active').style.display = 'block';
                 document.getElementById('cycleTitle').innerText = `Cycle ${activeCycle.exo}`;
+                document.getElementById('cycleLoadDisplay').innerText = activeCycle.load; // Affiche l'assistance
 
                 const list = document.getElementById('cycleWeeksList');
                 list.innerHTML = '';
@@ -284,20 +275,11 @@
                 activeCycle.weeks.forEach((w, idx) => {
                     let statusClass = w.done ? 'done' : '';
                     let activeClass = (!w.done && (idx === 0 || activeCycle.weeks[idx-1].done)) ? 'active' : '';
-                    
-                    let badgeColor = '#999';
-                    if(idx < 3) badgeColor = '#2196F3'; // Volume
-                    else if (idx < 5) badgeColor = '#ff9800'; // Intensité
-                    else badgeColor = '#4CAF50'; // Deload
+                    let badgeColor = idx < 3 ? '#2196F3' : (idx < 5 ? '#ff9800' : '#4CAF50');
 
-                    let actionBtn = '';
-                    if (!w.done && activeClass) {
-                        actionBtn = `<button class="btn-success" style="padding:5px 10px; font-size:0.8em; margin:0; width:auto;" onclick="openTimer(${idx})">GO ▶</button>`;
-                    } else if (w.done) {
-                        actionBtn = '✅';
-                    } else {
-                        actionBtn = '🔒';
-                    }
+                    let actionBtn = (!w.done && activeClass) ? 
+                        `<button class="btn-success" style="padding:5px 10px; font-size:0.8em; margin:0; width:auto;" onclick="openTimer(${idx})">GO ▶</button>` :
+                        (w.done ? '✅' : '🔒');
 
                     list.innerHTML += `
                         <div class="week-item ${statusClass} ${activeClass}">
@@ -309,7 +291,6 @@
                         </div>
                     `;
                 });
-
             } else {
                 document.getElementById('emom-create').style.display = 'block';
                 document.getElementById('emom-active').style.display = 'none';
@@ -317,17 +298,12 @@
         }
 
         function deleteCycle() {
-            if(confirm("Supprimer le cycle en cours ?")) {
-                const data = getEmomData();
-                data.active = null;
-                saveEmomData(data);
-                renderEmomView();
+            if(confirm("Supprimer ce cycle ?")) {
+                const data = getEmomData(); data.active = null; saveEmomData(data); renderEmomView();
             }
         }
-
         function toggleArchives() {
-            const el = document.getElementById('emom-archives');
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            const el = document.getElementById('emom-archives'); el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
         // --- TIMER ENGINE ---
@@ -337,11 +313,11 @@
             currentWeekIndex = weekIdx;
             const week = activeCycle.weeks[weekIdx];
             totalRounds = week.duration;
-            currentRound = 1;
-            timerSeconds = 0;
+            currentRound = 1; timerSeconds = 0;
 
             document.getElementById('timerExoTitle').innerText = activeCycle.exo;
-            document.getElementById('timerGoal').innerText = `Semaine ${week.id} : ${week.reps} reps / minute`;
+            document.getElementById('timerLoadInfo').innerText = activeCycle.load; // Rappel de l'assistance
+            document.getElementById('timerGoal').innerText = `Objectif : ${week.reps} reps / minute`;
             document.getElementById('timerBigDisplay').innerText = "00:00";
             document.getElementById('timerRoundDisplay').innerText = `Round 1/${totalRounds}`;
             
@@ -351,170 +327,70 @@
             document.getElementById('btnCloseTimer').style.display = 'block';
         }
 
-        function closeTimer() {
-            stopTimerEngine();
-            document.getElementById('timer-overlay').style.display = 'none';
-        }
-
+        function closeTimer() { stopTimerEngine(); document.getElementById('timer-overlay').style.display = 'none'; }
         function startTimerEngine() {
             initAudio();
             document.getElementById('btnGo').style.display = 'none';
             document.getElementById('btnCloseTimer').style.display = 'none';
             document.getElementById('btnStop').style.display = 'block';
-            
             playBeep(880, 0.4);
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(tick, 1000);
         }
-
         function stopTimerEngine() {
             clearInterval(timerInterval);
-            
-            // Si on arrête, on demande si on valide la semaine
             if(confirm("Valider cette semaine comme terminée ?")) {
                 const data = getEmomData();
                 data.active.weeks[currentWeekIndex].done = true;
-                
-                // Si c'est la dernière semaine, on archive
                 if(currentWeekIndex === 5) {
-                    alert("Cycle Terminé ! Félicitations ! Cycle archivé.");
-                    data.archives.push(data.active);
-                    data.active = null;
+                    alert("Cycle Terminé ! Archivé.");
+                    data.archives.push(data.active); data.active = null;
                 }
-
-                saveEmomData(data);
-                renderEmomView();
-                document.getElementById('timer-overlay').style.display = 'none';
+                saveEmomData(data); renderEmomView(); document.getElementById('timer-overlay').style.display = 'none';
             } else {
-                // Juste pause
                 document.getElementById('btnGo').style.display = 'block';
                 document.getElementById('btnCloseTimer').style.display = 'block';
                 document.getElementById('btnStop').style.display = 'none';
             }
         }
-
         function tick() {
             timerSeconds++;
             const timeLeft = 60 - timerSeconds;
-
             if (timeLeft === 30) playBeep(300, 0.2, 'triangle');
             if (timeLeft === 10) { playBeep(600, 0.1); setTimeout(() => playBeep(600, 0.1), 200); }
-            
             if (timerSeconds >= 60) {
-                timerSeconds = 0;
-                currentRound++;
-                if(currentRound > totalRounds) {
-                    playBeep(880, 0.5);
-                    stopTimerEngine();
-                    return;
-                }
+                timerSeconds = 0; currentRound++;
+                if(currentRound > totalRounds) { playBeep(880, 0.5); stopTimerEngine(); return; }
                 playBeep(880, 0.4);
             }
-
             const dispTime = timeLeft < 10 ? `00:0${timeLeft}` : `00:${timeLeft}`;
             document.getElementById('timerBigDisplay').innerText = dispTime;
             document.getElementById('timerRoundDisplay').innerText = `Round ${currentRound}/${totalRounds}`;
         }
 
-        // --- AUDIO ---
+        // --- UTILS ---
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         function playBeep(freq, dur, type='sine') {
             if (!audioCtx) initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
             osc.type = type; osc.frequency.value = freq;
             osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + dur);
             osc.stop(audioCtx.currentTime + dur);
         }
 
-        // --- (Les autres fonctions Standard/Stats restent identiques à V6) ---
-        // Je remets ici les fonctions essentielles pour que le code soit autonome
-        function saveUserWeight() {
-            const w = document.getElementById('currentBodyWeight').value;
-            if(w) localStorage.setItem(USER_WEIGHT_KEY, w);
-        }
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn'); 
-            if(mode === 'standard') document.getElementById('btn-std').classList.add('active-std');
-            if(mode === 'bodyweight') document.getElementById('btn-bw').classList.add('active-bw');
-            if(mode === 'time') document.getElementById('btn-time').classList.add('active-time');
-        }
-        function startNewSession() {
-            const w = document.getElementById('currentBodyWeight').value;
-            if(!w) { alert("Poids requis en haut !"); document.getElementById('currentBodyWeight').focus(); return; }
-            currentSession = { date: new Date().toISOString(), userWeightAtTime: parseFloat(w), exercises: [] };
-            bufferSets = [];
-            document.getElementById('exoName').value = '';
-            document.getElementById('bufferList').innerHTML = '...';
-            document.getElementById('currentSessionList').innerHTML = '';
-            setMode('standard');
-            switchView('view-workout');
-            document.querySelector('.nav-bar').style.display = 'none';
-        }
-        function cancelSession() {
-            if(confirm("Annuler ?")) { document.querySelector('.nav-bar').style.display = 'flex'; switchView('view-history'); }
-        }
-        function addSetToBuffer() {
-            let val1 = document.getElementById('inputVal1').value;
-            let val2 = document.getElementById('inputVal2').value;
-            if(!val2) return;
-            bufferSets.push({ val1: parseFloat(val1 || 0), val2: parseFloat(val2), mode: currentMode });
-            renderBuffer();
-        }
-        function renderBuffer() {
-            const list = document.getElementById('bufferList');
-            let html = '';
-            bufferSets.forEach((s, i) => html += `<div class="set-row">Série ${i+1}: ${s.val2} (${s.mode})</div>`);
-            list.innerHTML = html || '...';
-        }
-        function confirmExercise() {
-            const name = document.getElementById('exoName').value;
-            if(!name || bufferSets.length === 0) return;
-            currentSession.exercises.push({ name: name, sets: [...bufferSets], type: bufferSets[0].mode });
-            bufferSets = [];
-            document.getElementById('bufferList').innerHTML = 'Ajouté !';
-            let html = '';
-            currentSession.exercises.forEach(e => html += `<div class="session-item"><strong>${e.name}</strong> (${e.sets.length} séries)</div>`);
-            document.getElementById('currentSessionList').innerHTML = html;
-        }
-        function finishSession() {
-            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-            db.push(currentSession);
-            localStorage.setItem(DB_KEY, JSON.stringify(db));
-            alert("Sauvegardé !");
-            document.querySelector('.nav-bar').style.display = 'flex';
-            switchView('view-history');
-        }
-        function renderHistory() {
-            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-            db.sort((a, b) => new Date(b.date) - new Date(a.date));
-            let html = '';
-            db.forEach(s => html += `<div class="card"><strong>${new Date(s.date).toLocaleDateString()}</strong><br>${s.exercises.length} exos</div>`);
-            document.getElementById('historyList').innerHTML = html || 'Vide';
-        }
-        function initStats() { /* Identique V6 */ 
-             const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-             const select = document.getElementById('statExoSelect');
-             const unique = new Set(); db.forEach(s => s.exercises.forEach(e => unique.add(e.name)));
-             select.innerHTML = ''; unique.forEach(n => select.add(new Option(n, n)));
-             if(unique.size > 0) updateChart();
-        }
-        function updateChart() { /* Identique V6 */
-             const exo = document.getElementById('statExoSelect').value;
-             const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-             db.sort((a,b)=>new Date(a.date)-new Date(b.date));
-             const labels=[], data=[];
-             db.forEach(s => {
-                 const m = s.exercises.find(e=>e.name===exo);
-                 if(m) { labels.push(new Date(s.date).toLocaleDateString()); data.push(Math.max(...m.sets.map(x=>x.val1||x.val2))); }
-             });
-             if(myChart) myChart.destroy();
-             const ctx = document.getElementById('progChart').getContext('2d');
-             myChart = new Chart(ctx, { type:'line', data:{labels, datasets:[{label:'Perf', data, borderColor:'orange'}]} });
-        }
+        // Fonctions Standard (Identiques V7)
+        function saveUserWeight() { const w = document.getElementById('currentBodyWeight').value; if(w) localStorage.setItem(USER_WEIGHT_KEY, w); }
+        function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn'); if(mode === 'standard') document.getElementById('btn-std').classList.add('active-std'); if(mode === 'bodyweight') document.getElementById('btn-bw').classList.add('active-bw'); if(mode === 'time') document.getElementById('btn-time').classList.add('active-time'); }
+        function startNewSession() { const w = document.getElementById('currentBodyWeight').value; if(!w) { alert("Poids requis !"); document.getElementById('currentBodyWeight').focus(); return; } currentSession = { date: new Date().toISOString(), userWeightAtTime: parseFloat(w), exercises: [] }; bufferSets = []; document.getElementById('exoName').value = ''; document.getElementById('bufferList').innerHTML = '...'; document.getElementById('currentSessionList').innerHTML = ''; setMode('standard'); switchView('view-workout'); document.querySelector('.nav-bar').style.display = 'none'; }
+        function cancelSession() { if(confirm("Annuler ?")) { document.querySelector('.nav-bar').style.display = 'flex'; switchView('view-history'); } }
+        function addSetToBuffer() { let val1 = document.getElementById('inputVal1').value; let val2 = document.getElementById('inputVal2').value; if(!val2) return; bufferSets.push({ val1: parseFloat(val1 || 0), val2: parseFloat(val2), mode: currentMode }); renderBuffer(); }
+        function renderBuffer() { const list = document.getElementById('bufferList'); let html = ''; bufferSets.forEach((s, i) => html += `<div class="set-row">Série ${i+1}: ${s.val2} (${s.mode})</div>`); list.innerHTML = html || '...'; }
+        function confirmExercise() { const name = document.getElementById('exoName').value; if(!name || bufferSets.length === 0) return; currentSession.exercises.push({ name: name, sets: [...bufferSets], type: bufferSets[0].mode }); bufferSets = []; document.getElementById('bufferList').innerHTML = 'Ajouté !'; let html = ''; currentSession.exercises.forEach(e => html += `<div class="session-item"><strong>${e.name}</strong> (${e.sets.length} séries)</div>`); document.getElementById('currentSessionList').innerHTML = html; }
+        function finishSession() { const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); db.push(currentSession); localStorage.setItem(DB_KEY, JSON.stringify(db)); alert("Sauvegardé !"); document.querySelector('.nav-bar').style.display = 'flex'; switchView('view-history'); }
+        function renderHistory() { const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); db.sort((a, b) => new Date(b.date) - new Date(a.date)); let html = ''; db.forEach(s => html += `<div class="card"><strong>${new Date(s.date).toLocaleDateString()}</strong><br>${s.exercises.length} exos</div>`); document.getElementById('historyList').innerHTML = html || 'Vide'; }
+        function initStats() { const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); const select = document.getElementById('statExoSelect'); const unique = new Set(); db.forEach(s => s.exercises.forEach(e => unique.add(e.name))); select.innerHTML = ''; unique.forEach(n => select.add(new Option(n, n))); if(unique.size > 0) updateChart(); }
+        function updateChart() { const exo = document.getElementById('statExoSelect').value; const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); db.sort((a,b)=>new Date(a.date)-new Date(b.date)); const labels=[], data=[]; db.forEach(s => { const m = s.exercises.find(e=>e.name===exo); if(m) { labels.push(new Date(s.date).toLocaleDateString()); data.push(Math.max(...m.sets.map(x=>x.val1||x.val2))); } }); if(myChart) myChart.destroy(); const ctx = document.getElementById('progChart').getContext('2d'); myChart = new Chart(ctx, { type:'line', data:{labels, datasets:[{label:'Perf', data, borderColor:'orange'}]} }); }
     </script>
 </body>
 </html>
