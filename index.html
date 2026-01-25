@@ -3,44 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muscu App V5</title>
+    <title>Muscu App V6 - EMOM</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; }
-        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 80px;}
+        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; --dark: #333; }
+        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 90px; user-select: none; }
         
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 15px 0; z-index: 100; }
-        .nav-item { cursor: pointer; color: #999; font-weight: bold; text-align: center; flex: 1; }
+        /* Navigation */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-item { cursor: pointer; color: #aaa; font-weight: bold; text-align: center; flex: 1; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .nav-item span { font-size: 1.2em; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); }
 
-        .view { display: none; }
+        .view { display: none; animation: fadeIn 0.3s; }
         .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h2, h3 { margin-top: 0; color: #333; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        h2, h3 { margin-top: 0; color: var(--dark); }
         
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         
-        button { width: 100%; padding: 12px; border: none; border-radius: 4px; font-size: 15px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold;}
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; transition: transform 0.1s;}
+        button:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary); }
         .btn-success { background-color: var(--success); }
         .btn-danger { background-color: #ff5252; }
-        .btn-outline { background-color: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
 
-        .mode-selector { display: flex; gap: 5px; margin-bottom: 15px; }
-        .mode-btn { flex: 1; padding: 10px 5px; font-size: 12px; text-align: center; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: #fff; color: #666; transition: 0.2s;}
+        /* MODE SELECTOR */
+        .mode-selector { display: flex; gap: 8px; margin-bottom: 15px; }
+        .mode-btn { flex: 1; padding: 12px 5px; font-size: 13px; text-align: center; border: 1px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; color: #666; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .mode-btn.active-std { background-color: var(--primary); color: white; border-color: var(--primary); }
         .mode-btn.active-bw { background-color: var(--accent); color: white; border-color: var(--accent); }
         .mode-btn.active-time { background-color: #607d8b; color: white; border-color: #607d8b; }
 
-        .set-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; font-size: 0.9em; }
-        .session-item { border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 15px; }
+        .set-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
+        .session-item { border-left: 5px solid var(--primary); padding-left: 12px; margin-bottom: 15px; background: #fff; padding: 10px 10px 10px 15px; border-radius: 0 8px 8px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         .session-item.type-bw { border-left-color: var(--accent); } 
         
         .chart-container { position: relative; height: 250px; width: 100%; }
         
-        /* CORRECTION : Style plus visible pour l'entrée du poids */
-        .weight-input-box { background-color: white; padding: 15px; border-radius: 8px; border-left: 5px solid var(--accent); margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+        .weight-input-box { background-color: white; padding: 15px; border-radius: 12px; border-left: 6px solid var(--accent); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+
+        /* --- STYLE EMOM --- */
+        .timer-display { font-size: 80px; font-weight: bold; text-align: center; color: var(--dark); font-variant-numeric: tabular-nums; line-height: 1; margin: 20px 0; }
+        .timer-info { text-align: center; font-size: 1.2em; color: #666; margin-bottom: 20px; }
+        .timer-controls { display: flex; gap: 10px; }
+        .timer-active { color: var(--success); }
+        .timer-warning { color: #f44336; } /* Rouge pour la fin */
     </style>
 </head>
 <body>
@@ -50,17 +61,17 @@
         
         <div class="weight-input-box">
             <div>
-                <strong>Mon Poids Actuel (kg)</strong><br>
-                <small style="color:#666">Nécessaire pour le calcul PDC</small>
+                <strong>Mon Poids (kg)</strong><br>
+                <small style="color:#666">Pour le calcul PDC</small>
             </div>
             <input type="number" id="currentBodyWeight" style="width: 80px; text-align:center; font-size: 1.2em; border: 2px solid #eee;" placeholder="Ex: 75" onchange="saveUserWeight()">
         </div>
 
-        <h3>Dernières Séances</h3>
+        <h3>Historique récent</h3>
         <div id="historyList"></div>
         <div style="height: 60px;"></div>
         
-        <button class="btn-success" onclick="startNewSession()" style="position:fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <button class="btn-success" onclick="startNewSession()" style="position:fixed; bottom: 85px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);">
             + NOUVELLE SÉANCE
         </button>
     </div>
@@ -73,77 +84,106 @@
 
         <div class="card">
             <h3>Ajouter un exercice</h3>
-            <input type="text" id="exoName" list="exoSuggestions" placeholder="Nom (ex: Squat, Tractions...)">
+            <input type="text" id="exoName" list="exoSuggestions" placeholder="Nom (ex: Squat...)">
             <datalist id="exoSuggestions"></datalist>
 
-            <label style="margin-bottom:5px; font-size:0.85em; color:#666;">Type d'exercice :</label>
             <div class="mode-selector">
-                <div class="mode-btn active-std" id="btn-std" onclick="setMode('standard')">
-                    🏋️ Fonte<br>(Barre/Haltère)
-                </div>
-                <div class="mode-btn" id="btn-bw" onclick="setMode('bodyweight')">
-                    🤸 Poids Corps<br>(+ Lest)
-                </div>
-                <div class="mode-btn" id="btn-time" onclick="setMode('time')">
-                    ⏱️ Chrono<br>(Temps)
-                </div>
+                <div class="mode-btn active-std" id="btn-std" onclick="setMode('standard')">🏋️ Fonte</div>
+                <div class="mode-btn" id="btn-bw" onclick="setMode('bodyweight')">🤸 PDC</div>
+                <div class="mode-btn" id="btn-time" onclick="setMode('time')">⏱️ Temps</div>
             </div>
 
             <div style="display: flex; gap: 10px;">
                 <div style="flex:1">
                     <label id="labelVal1">Poids (kg)</label>
-                    <input type="number" id="inputVal1">
+                    <input type="number" id="inputVal1" inputmode="decimal">
                 </div>
                 <div style="flex:1">
-                    <label id="labelVal2">Répétitions</label>
-                    <input type="number" id="inputVal2">
+                    <label id="labelVal2">Reps</label>
+                    <input type="number" id="inputVal2" inputmode="numeric">
                 </div>
             </div>
 
             <button class="btn-outline" onclick="addSetToBuffer()">Ajouter la série</button>
 
-            <div id="bufferList" style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 4px; min-height: 40px;">
-                <em style="color:#999; font-size:0.9em;">Ajoute des séries ci-dessus...</em>
+            <div id="bufferList" style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; min-height: 40px;">
+                <em style="color:#999; font-size:0.9em;">Séries en attente...</em>
             </div>
 
             <button class="btn-primary" onclick="confirmExercise()">Valider l'exercice</button>
         </div>
 
-        <h3 style="margin-top:20px;">Fait dans cette séance :</h3>
+        <h3 style="margin-top:20px;">Résumé :</h3>
         <div id="currentSessionList"></div>
-
         <button class="btn-success" onclick="finishSession()">Terminer la séance</button>
     </div>
 
     <div id="view-stats" class="view">
         <h2>📈 Progression</h2>
         <div class="card">
-            <label>Voir l'exercice :</label>
+            <label>Exercice :</label>
             <select id="statExoSelect" onchange="updateChart()"></select>
             <div class="chart-container">
                 <canvas id="progChart"></canvas>
             </div>
-            <p style="font-size: 0.8em; color: #666; margin-top: 15px; line-height: 1.4;">
-                <strong>Comprendre le graphique :</strong><br>
-                • Fonte : Affiche le poids de la barre.<br>
-                • Poids du Corps : Affiche (Ton Poids + Lest).
+            <p style="font-size: 0.8em; color: #666; margin-top: 15px; text-align: center;">
+                PDC = Ton Poids + Lest<br>Fonte = Poids de la barre
             </p>
         </div>
     </div>
 
+    <div id="view-chrono" class="view">
+        <h2>⏱️ Chrono EMOM</h2>
+        <div class="card">
+            <label>Nombre de Rounds (Minutes)</label>
+            <input type="number" id="emomRounds" value="10" placeholder="Ex: 10">
+            
+            <div class="timer-display" id="timerDisplay">00:00</div>
+            <div class="timer-info" id="roundDisplay">Prêt ?</div>
+
+            <div class="timer-controls">
+                <button class="btn-success" onclick="startEMOM()" id="btnStartEmom">GO !</button>
+                <button class="btn-danger" onclick="stopEMOM()" id="btnStopEmom" style="display:none;">STOP</button>
+            </div>
+            
+            <div style="margin-top: 20px; font-size: 0.9em; color: #666; background: #f0f0f0; padding: 10px; border-radius: 8px;">
+                <strong>Déroulement :</strong><br>
+                🔊 Bip aigu au départ de chaque minute.<br>
+                🔊 Bip grave à 30 secondes.<br>
+                🔊 Double bip à 10 sec de la fin.
+            </div>
+        </div>
+    </div>
+
     <div class="nav-bar">
-        <div class="nav-item active" onclick="switchView('view-history', this)">Historique</div>
-        <div class="nav-item" onclick="switchView('view-stats', this)">Graphiques</div>
+        <div class="nav-item active" onclick="switchView('view-history', this)">
+            <span>📅</span>Historique
+        </div>
+        <div class="nav-item" onclick="switchView('view-stats', this)">
+            <span>📈</span>Stats
+        </div>
+        <div class="nav-item" onclick="switchView('view-chrono', this)">
+            <span>⏱️</span>Chrono
+        </div>
     </div>
 
     <script>
+        // --- CONFIG ---
         const DB_KEY = 'muscu_app_v4';
         const USER_WEIGHT_KEY = 'user_weight_v4';
 
+        // --- VARS GLOBALES ---
         let currentSession = null;
         let bufferSets = [];
         let currentMode = 'standard'; 
         let myChart = null;
+
+        // Vars EMOM
+        let emomInterval = null;
+        let emomTime = 0; // temps écoulé dans la minute actuelle
+        let currentRound = 1;
+        let totalRounds = 10;
+        let audioCtx = null; // Pour le son
 
         window.onload = function() {
             renderHistory();
@@ -151,6 +191,7 @@
             if(savedWeight) document.getElementById('currentBodyWeight').value = savedWeight;
         }
 
+        // --- NAVIGATION ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
@@ -162,6 +203,105 @@
             if(viewId === 'view-stats') initStats();
         }
 
+        // --- AUDIO ENGINE (BIPS) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playBeep(freq = 440, duration = 0.1, type = 'sine') {
+            if (!audioCtx) initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // --- EMOM LOGIC ---
+        function startEMOM() {
+            initAudio(); // Active le son au clic utilisateur (obligatoire sur mobile)
+            
+            const roundsInput = document.getElementById('emomRounds').value;
+            totalRounds = parseInt(roundsInput) || 10;
+            currentRound = 1;
+            emomTime = 0; // On commence à 0 seconde de la minute
+
+            document.getElementById('btnStartEmom').style.display = 'none';
+            document.getElementById('btnStopEmom').style.display = 'block';
+            
+            playBeep(880, 0.3); // Bip de départ Aigu
+            updateTimerDisplay();
+
+            if(emomInterval) clearInterval(emomInterval);
+            emomInterval = setInterval(emomTick, 1000);
+        }
+
+        function stopEMOM() {
+            clearInterval(emomInterval);
+            document.getElementById('timerDisplay').innerText = "00:00";
+            document.getElementById('roundDisplay').innerText = "Arrêté";
+            document.getElementById('timerDisplay').className = "timer-display";
+            document.getElementById('btnStartEmom').style.display = 'block';
+            document.getElementById('btnStopEmom').style.display = 'none';
+        }
+
+        function emomTick() {
+            emomTime++;
+            const timeLeft = 60 - emomTime;
+
+            // Logique des bips
+            if (timeLeft === 30) {
+                playBeep(300, 0.2, 'triangle'); // Bip Grave 30s
+            }
+            if (timeLeft === 10) {
+                playBeep(600, 0.1); // Bip Avertissement
+                setTimeout(() => playBeep(600, 0.1), 200); // Double bip
+            }
+            
+            // Fin de la minute
+            if (emomTime >= 60) {
+                emomTime = 0;
+                currentRound++;
+                if (currentRound > totalRounds) {
+                    finishEMOM();
+                    return;
+                }
+                playBeep(880, 0.4, 'square'); // Bip Aigu Nouveau Round
+            }
+
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const timeLeft = 60 - emomTime;
+            // Format 00:XX
+            const strTime = timeLeft < 10 ? `00:0${timeLeft}` : `00:${timeLeft}`;
+            document.getElementById('timerDisplay').innerText = strTime;
+            document.getElementById('roundDisplay').innerText = `Round ${currentRound} / ${totalRounds}`;
+
+            // Changement de couleur
+            const disp = document.getElementById('timerDisplay');
+            if (timeLeft <= 10) disp.className = "timer-display timer-warning";
+            else disp.className = "timer-display timer-active";
+        }
+
+        function finishEMOM() {
+            stopEMOM();
+            document.getElementById('roundDisplay').innerText = "Terminé ! Bravo !";
+            playBeep(880, 0.1);
+            setTimeout(() => playBeep(880, 0.1), 150);
+            setTimeout(() => playBeep(880, 0.3), 300);
+        }
+
+
+        // --- LOGIQUE METIER MUSCU (Identique V5) ---
         function saveUserWeight() {
             const w = document.getElementById('currentBodyWeight').value;
             if(w) localStorage.setItem(USER_WEIGHT_KEY, w);
@@ -182,12 +322,12 @@
             if(mode === 'standard') {
                 l1.innerText = "Poids Barre/Machine (kg)";
                 i1.placeholder = "Ex: 60";
-                l2.innerText = "Répétitions";
+                l2.innerText = "Reps";
                 i2.placeholder = "Ex: 10";
             } else if (mode === 'bodyweight') {
                 l1.innerText = "Lest ajouté (kg)";
-                i1.placeholder = "0 = Rien, -10 = Elastique";
-                l2.innerText = "Répétitions";
+                i1.placeholder = "0=Rien, -10=Elastique";
+                l2.innerText = "Reps";
                 i2.placeholder = "Ex: 8";
             } else {
                 l1.innerText = "Lest (Optionnel)";
@@ -199,23 +339,17 @@
 
         function startNewSession() {
             const w = document.getElementById('currentBodyWeight').value;
-            // On vérifie le poids ICI, maintenant que le champ est accessible
             if(!w) { 
-                alert("Entre d'abord ton poids actuel en haut de la page d'accueil !"); 
-                // On met le focus sur le champ pour aider l'utilisateur
+                alert("Entre d'abord ton poids actuel en haut !"); 
                 document.getElementById('currentBodyWeight').focus();
                 return; 
             }
             
-            currentSession = { 
-                date: new Date().toISOString(), 
-                userWeightAtTime: parseFloat(w), 
-                exercises: [] 
-            };
+            currentSession = { date: new Date().toISOString(), userWeightAtTime: parseFloat(w), exercises: [] };
             bufferSets = [];
             
             document.getElementById('exoName').value = '';
-            document.getElementById('bufferList').innerHTML = '<em style="color:#999; font-size:0.9em;">Ajoute des séries ci-dessus...</em>';
+            document.getElementById('bufferList').innerHTML = '<em style="color:#999; font-size:0.9em;">Séries en attente...</em>';
             document.getElementById('currentSessionList').innerHTML = '';
             setMode('standard');
 
@@ -224,7 +358,7 @@
         }
 
         function cancelSession() {
-            if(confirm("Tout annuler ?")) {
+            if(confirm("Annuler ?")) {
                 document.querySelector('.nav-bar').style.display = 'flex';
                 switchView('view-history');
             }
@@ -280,7 +414,6 @@
             document.getElementById('inputVal1').value = '';
             document.getElementById('inputVal2').value = '';
             document.getElementById('bufferList').innerHTML = '<em>Exercice ajouté ! Suivant...</em>';
-            
             renderCurrentSession();
         }
 
@@ -295,7 +428,7 @@
                 
                 let info = "";
                 if(exo.type === 'standard') info = `Fonte`;
-                if(exo.type === 'bodyweight') info = `Poids du corps`;
+                if(exo.type === 'bodyweight') info = `PDC`;
                 if(exo.type === 'time') info = `Temps`;
 
                 html += `<div class="session-item ${exo.type === 'bodyweight' ? 'type-bw' : ''}">
@@ -308,11 +441,9 @@
 
         function finishSession() {
             if(currentSession.exercises.length === 0) { alert("Vide ?"); return; }
-            
             const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
             db.push(currentSession);
             localStorage.setItem(DB_KEY, JSON.stringify(db));
-            
             alert("Sauvegardé !");
             document.querySelector('.nav-bar').style.display = 'flex';
             switchView('view-history');
@@ -327,30 +458,29 @@
 
             db.forEach(sess => {
                 const d = new Date(sess.date);
-                const dateStr = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+                const dateStr = d.toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'});
                 
                 let content = '';
                 sess.exercises.forEach(e => {
                     let summary = '';
-                    
                     if(e.type === 'standard') {
                         const maxW = Math.max(...e.sets.map(s => s.val1));
-                        summary = `${e.sets.length} séries @ ${maxW}kg (max)`;
+                        summary = `${e.sets.length}x @ ${maxW}kg`;
                     } else if (e.type === 'bodyweight') {
                         const maxLest = Math.max(...e.sets.map(s => s.val1));
                         const sign = maxLest >= 0 ? '+' : '';
-                        summary = `${e.sets.length} séries @ PDC${sign}${maxLest}kg`;
+                        summary = `${e.sets.length}x @ PDC${sign}${maxLest}`;
                     } else {
                          summary = `${e.sets.length} séries (Temps)`;
                     }
-
-                    content += `<div style="margin-left:15px; margin-top:5px; font-size:0.9em;">
-                        • <strong>${e.name}</strong> : ${summary}
-                    </div>`;
+                    content += `<div style="margin-left:15px; margin-top:5px; font-size:0.9em; color:#555;">• ${e.name} : ${summary}</div>`;
                 });
 
                 html += `<div class="card">
-                    <h3 style="margin-bottom:5px; font-size:1em;">${dateStr} <span style="font-weight:normal; font-size:0.8em; color:#888;">(Poids: ${sess.userWeightAtTime}kg)</span></h3>
+                    <h3 style="margin-bottom:5px; font-size:1em; display:flex; justify-content:space-between;">
+                        <span>${dateStr}</span> 
+                        <span style="font-weight:normal; font-size:0.8em; color:#888;">${sess.userWeightAtTime}kg</span>
+                    </h3>
                     ${content}
                 </div>`;
             });
@@ -362,7 +492,6 @@
             const select = document.getElementById('statExoSelect');
             const uniqueExos = new Set();
             db.forEach(s => s.exercises.forEach(e => uniqueExos.add(e.name)));
-            
             select.innerHTML = '';
             uniqueExos.forEach(n => {
                 const o = document.createElement('option');
@@ -383,32 +512,26 @@
             db.forEach(sess => {
                 const match = sess.exercises.find(e => e.name === exoName);
                 if(match) {
-                    labels.push(new Date(sess.date).toLocaleDateString('fr-FR'));
-                    
+                    labels.push(new Date(sess.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short'}));
                     let bestVal = 0;
-                    
-                    if(match.type === 'time') {
-                        bestVal = Math.max(...match.sets.map(s => s.val2)); 
-                    } else if (match.type === 'standard') {
-                        bestVal = Math.max(...match.sets.map(s => s.val1));
-                    } else if (match.type === 'bodyweight') {
+                    if(match.type === 'time') bestVal = Math.max(...match.sets.map(s => s.val2)); 
+                    else if (match.type === 'standard') bestVal = Math.max(...match.sets.map(s => s.val1));
+                    else if (match.type === 'bodyweight') {
                         const maxLest = Math.max(...match.sets.map(s => s.val1));
                         bestVal = sess.userWeightAtTime + maxLest;
                     }
-                    
                     data.push(bestVal);
                 }
             });
 
             const ctx = document.getElementById('progChart').getContext('2d');
             if(myChart) myChart.destroy();
-            
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Performance Max (Kg ou Sec)',
+                        label: 'Meilleure Perf',
                         data: data,
                         borderColor: '#ff9800',
                         backgroundColor: 'rgba(255, 152, 0, 0.1)',
