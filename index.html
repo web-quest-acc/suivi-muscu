@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muscu App V8 - Cycles Complets</title>
+    <title>Muscu App V9 - Multi EMOM</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; --dark: #333; }
+        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; --dark: #333; --danger: #ff5252; }
         body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 90px; user-select: none; }
         
         /* Navigation */
@@ -28,34 +28,33 @@
         button:active { transform: scale(0.98); }
         .btn-primary { background-color: var(--primary); }
         .btn-success { background-color: var(--success); }
-        .btn-danger { background-color: #ff5252; }
+        .btn-danger { background-color: var(--danger); }
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
 
-        /* MODE SELECTOR */
+        /* Styles spécifiques Multi-Cycles */
+        .cycle-container { border-left: 5px solid var(--primary); margin-bottom: 20px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .cycle-header { padding: 15px; background: #fcfcfc; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start; }
+        .cycle-content { padding: 10px; }
+        
+        .week-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .week-item.done { opacity: 0.5; text-decoration: line-through; background-color: #f9f9f9; }
+        .week-item.active { background-color: #e3f2fd; font-weight: bold; border-radius: 4px; border: 1px solid #bbdefb; }
+        .week-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; color:white; margin-left:5px; vertical-align: middle; }
+        
+        .timer-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 200; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        .timer-display { font-size: 90px; font-weight: bold; color: var(--dark); font-variant-numeric: tabular-nums; }
+        
+        .weight-input-box { background-color: white; padding: 15px; border-radius: 12px; border-left: 6px solid var(--accent); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
+        
+        /* Mode Selector (Workout) */
         .mode-selector { display: flex; gap: 8px; margin-bottom: 15px; }
         .mode-btn { flex: 1; padding: 12px 5px; font-size: 13px; text-align: center; border: 1px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; color: #666; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .mode-btn.active-std { background-color: var(--primary); color: white; border-color: var(--primary); }
         .mode-btn.active-bw { background-color: var(--accent); color: white; border-color: var(--accent); }
         .mode-btn.active-time { background-color: #607d8b; color: white; border-color: #607d8b; }
-
-        .set-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 0.95em; }
-        .session-item { border-left: 5px solid var(--primary); padding-left: 12px; margin-bottom: 15px; background: #fff; padding: 10px 10px 10px 15px; border-radius: 0 8px 8px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
-        .session-item.type-bw { border-left-color: var(--accent); } 
         
-        .chart-container { position: relative; height: 250px; width: 100%; }
-        .weight-input-box { background-color: white; padding: 15px; border-radius: 12px; border-left: 6px solid var(--accent); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
-
-        /* --- STYLE EMOM CYCLES --- */
-        .week-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
-        .week-item.done { opacity: 0.6; text-decoration: line-through; background-color: #f9f9f9; }
-        .week-item.active { background-color: #e3f2fd; border-left: 4px solid var(--primary); font-weight: bold; border-radius: 4px; }
-        .week-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; color:white; }
-        
-        .timer-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 200; display:none; flex-direction:column; align-items:center; justify-content:center; }
-        .timer-display { font-size: 90px; font-weight: bold; color: var(--dark); font-variant-numeric: tabular-nums; }
-        
-        .archive-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 0.9em; color: #666; }
-        .load-badge { background-color: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: #555; border: 1px solid #ccc; }
+        .session-item { border-left: 5px solid var(--primary); padding-left: 12px; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 0 8px 8px 0; }
+        .set-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0; }
     </style>
 </head>
 <body>
@@ -124,50 +123,36 @@
     </div>
 
     <div id="view-emom" class="view">
-        <h2>⏱️ Cycles EMOM</h2>
+        <h2>⏱️ Mes Cycles EMOM</h2>
         
-        <div id="emom-create" class="card" style="display:none;">
-            <h3>🚀 Nouveau Cycle (6 semaines)</h3>
-            <label>Exercice</label>
-            <input type="text" id="newCycleExo" placeholder="Ex: Tractions...">
-            
-            <label>Assistance / Lest (Note pour toi)</label>
-            <input type="text" id="newCycleLoad" placeholder="Ex: Élastique Violet, Machine -20kg...">
-            <small style="color:#666; display:block; margin-bottom:10px;">Sera affiché à chaque séance pour ne pas oublier.</small>
-
+        <button class="btn-primary" onclick="toggleCreateForm()" style="margin-bottom: 20px;">+ Créer un nouveau cycle</button>
+        
+        <div id="emom-create" class="card" style="display:none; border: 2px solid var(--primary);">
+            <h3 style="color:var(--primary)">🚀 Nouveau Cycle (6 semaines)</h3>
+            <label>Exercice (ex: Pike Push-ups)</label>
+            <input type="text" id="newCycleExo">
+            <label>Assistance / Lest (ex: Au sol, Pieds surélevés...)</label>
+            <input type="text" id="newCycleLoad" placeholder="Pour t'en souvenir">
             <label>Répétitions de base (par minute)</label>
             <input type="number" id="newCycleReps" placeholder="Ex: 5">
-            
-            <button class="btn-primary" onclick="createEmomCycle()">Générer le Programme</button>
-        </div>
-
-        <div id="emom-active" style="display:none;">
-            <div class="card" style="border-left: 5px solid var(--primary);">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <div>
-                        <h3 id="cycleTitle" style="margin:0;">Cycle Tractions</h3>
-                        <div id="cycleLoadDisplay" class="load-badge" style="display:inline-block; margin-top:5px;">Poids du corps</div>
-                    </div>
-                    <button class="btn-danger" style="width:auto; padding:5px 10px; margin:0; font-size:0.8em;" onclick="deleteCycle()">Arrêter</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <h3>📅 Feuille de route</h3>
-                <div id="cycleWeeksList"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-success" onclick="createEmomCycle()">Valider</button>
+                <button class="btn-outline" onclick="toggleCreateForm()">Annuler</button>
             </div>
         </div>
+
+        <div id="activeCyclesList"></div>
 
         <div class="card">
-            <h3 onclick="toggleArchives()" style="cursor:pointer; display:flex; justify-content:space-between;">
-                📜 Archives / Historique <span>▼</span>
+            <h3 onclick="toggleArchives()" style="cursor:pointer; display:flex; justify-content:space-between; margin-bottom:0;">
+                📜 Archives Terminées <span>▼</span>
             </h3>
-            <div id="emom-archives" style="display:none; margin-top:10px;"></div>
+            <div id="emom-archives" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
         </div>
     </div>
 
     <div id="timer-overlay" class="timer-overlay">
-        <h2 id="timerExoTitle">Tractions</h2>
+        <h2 id="timerExoTitle">...</h2>
         <p id="timerLoadInfo" style="color:#f57c00; font-weight:bold;">...</p>
         <p id="timerGoal" style="font-size:1.2em; margin-bottom:10px;">...</p>
         
@@ -190,7 +175,7 @@
     <script>
         const DB_KEY = 'muscu_app_v4';
         const USER_WEIGHT_KEY = 'user_weight_v4';
-        const EMOM_KEY = 'emom_cycles_v2'; // Nouvelle clé V2
+        const EMOM_KEY = 'emom_cycles_v3'; // Nouvelle clé V3 pour le tableau
 
         let currentSession = null;
         let bufferSets = [];
@@ -198,7 +183,10 @@
         let myChart = null;
 
         // Vars EMOM
-        let activeCycle = null;
+        let activeCycles = []; // Tableau maintenant !
+        let runningCycleId = null; // ID du cycle en cours de chrono
+        let runningWeekIndex = 0;
+        
         let timerInterval = null;
         let timerSeconds = 0;
         let currentRound = 1;
@@ -224,82 +212,114 @@
             if(viewId === 'view-emom') renderEmomView();
         }
 
-        // --- GESTION EMOM ---
-        function getEmomData() { return JSON.parse(localStorage.getItem(EMOM_KEY) || '{ "active": null, "archives": [] }'); }
+        // --- GESTION EMOM MULTI ---
+        function getEmomData() { 
+            // V3 : active est un Array []
+            return JSON.parse(localStorage.getItem(EMOM_KEY) || '{ "active": [], "archives": [] }'); 
+        }
         function saveEmomData(data) { localStorage.setItem(EMOM_KEY, JSON.stringify(data)); }
+
+        function toggleCreateForm() {
+            const form = document.getElementById('emom-create');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
 
         function createEmomCycle() {
             const exo = document.getElementById('newCycleExo').value;
-            const load = document.getElementById('newCycleLoad').value || "Poids du corps"; // Par défaut
+            const load = document.getElementById('newCycleLoad').value || "Standard";
             const base = parseInt(document.getElementById('newCycleReps').value);
             
-            if(!exo || !base) { alert("Remplis l'exercice et les reps !"); return; }
+            if(!exo || !base) { alert("Remplis tout !"); return; }
 
             const weeks = [
-                { id: 1, duration: 10, reps: base, label: "Volume (Base)", done: false },
-                { id: 2, duration: 12, reps: base, label: "Volume (+)", done: false },
-                { id: 3, duration: 15, reps: base, label: "Volume (Max)", done: false },
-                { id: 4, duration: 10, reps: base + 1, label: "Densité (+1 rep)", done: false },
+                { id: 1, duration: 10, reps: base, label: "Volume Base", done: false },
+                { id: 2, duration: 12, reps: base, label: "Volume +", done: false },
+                { id: 3, duration: 15, reps: base, label: "Volume Max", done: false },
+                { id: 4, duration: 10, reps: base + 1, label: "Densité", done: false },
                 { id: 5, duration: 12, reps: base + 1, label: "Overreach", done: false },
                 { id: 6, duration: 10, reps: Math.ceil(base/2), label: "Deload", done: false }
             ];
 
-            const newCycle = { exo, load, baseReps: base, startDate: new Date().toISOString(), weeks };
+            const newCycle = { 
+                id: Date.now(), // ID Unique
+                exo, load, baseReps: base, startDate: new Date().toISOString(), weeks 
+            };
+            
             const data = getEmomData();
-            data.active = newCycle;
+            data.active.push(newCycle); // On ajoute au tableau
             saveEmomData(data);
+            
+            toggleCreateForm();
             renderEmomView();
         }
 
         function renderEmomView() {
             const data = getEmomData();
+            activeCycles = data.active; // Mise en cache
             
+            // Archives
             const archiveDiv = document.getElementById('emom-archives');
             archiveDiv.innerHTML = '';
             data.archives.forEach(c => {
                 const dateStr = new Date(c.startDate).toLocaleDateString();
-                const loadStr = c.load ? `(${c.load})` : '';
-                archiveDiv.innerHTML += `<div class="archive-item">✅ <strong>${c.exo}</strong> ${loadStr} <br><small>${dateStr}</small></div>`;
+                archiveDiv.innerHTML += `<div style="padding:5px; border-bottom:1px solid #eee;">✅ <strong>${c.exo}</strong> (${c.load}) <br><small>${dateStr}</small></div>`;
             });
 
-            if(data.active) {
-                activeCycle = data.active;
-                document.getElementById('emom-create').style.display = 'none';
-                document.getElementById('emom-active').style.display = 'block';
-                document.getElementById('cycleTitle').innerText = `Cycle ${activeCycle.exo}`;
-                document.getElementById('cycleLoadDisplay').innerText = activeCycle.load; // Affiche l'assistance
+            // Liste des cycles actifs
+            const listDiv = document.getElementById('activeCyclesList');
+            listDiv.innerHTML = '';
 
-                const list = document.getElementById('cycleWeeksList');
-                list.innerHTML = '';
+            if (activeCycles.length === 0) {
+                listDiv.innerHTML = '<p style="text-align:center; color:#999;">Aucun cycle actif. Crée-en un !</p>';
+                return;
+            }
 
-                activeCycle.weeks.forEach((w, idx) => {
+            // Génération des cartes pour chaque cycle
+            activeCycles.forEach(cycle => {
+                let weeksHtml = '';
+                cycle.weeks.forEach((w, idx) => {
                     let statusClass = w.done ? 'done' : '';
-                    let activeClass = (!w.done && (idx === 0 || activeCycle.weeks[idx-1].done)) ? 'active' : '';
+                    let activeClass = (!w.done && (idx === 0 || cycle.weeks[idx-1].done)) ? 'active' : '';
                     let badgeColor = idx < 3 ? '#2196F3' : (idx < 5 ? '#ff9800' : '#4CAF50');
 
                     let actionBtn = (!w.done && activeClass) ? 
-                        `<button class="btn-success" style="padding:5px 10px; font-size:0.8em; margin:0; width:auto;" onclick="openTimer(${idx})">GO ▶</button>` :
+                        `<button class="btn-success" style="padding:4px 8px; font-size:0.8em; margin:0; width:auto;" onclick="openTimer(${cycle.id}, ${idx})">GO ▶</button>` :
                         (w.done ? '✅' : '🔒');
 
-                    list.innerHTML += `
+                    weeksHtml += `
                         <div class="week-item ${statusClass} ${activeClass}">
-                            <div>
-                                <div style="font-weight:bold;">Semaine ${w.id} <span class="week-badge" style="background:${badgeColor}">${w.label}</span></div>
-                                <div style="font-size:0.9em; color:#666;">${w.duration} min × <strong>${w.reps} reps</strong></div>
+                            <div style="font-size:0.9em;">
+                                <strong>Sem ${w.id}</strong> <span class="week-badge" style="background:${badgeColor}">${w.label}</span>
+                                <span style="color:#666; margin-left:5px;">${w.duration}' × ${w.reps}</span>
                             </div>
                             <div>${actionBtn}</div>
                         </div>
                     `;
                 });
-            } else {
-                document.getElementById('emom-create').style.display = 'block';
-                document.getElementById('emom-active').style.display = 'none';
-            }
+
+                listDiv.innerHTML += `
+                    <div class="cycle-container">
+                        <div class="cycle-header">
+                            <div>
+                                <h3 style="margin:0; font-size:1.1em;">${cycle.exo}</h3>
+                                <div style="font-size:0.85em; background:#eee; display:inline-block; padding:2px 6px; border-radius:4px; margin-top:4px;">${cycle.load}</div>
+                            </div>
+                            <button class="btn-danger" style="width:auto; padding:5px 8px; font-size:0.75em; margin:0;" onclick="deleteCycle(${cycle.id})">🗑️</button>
+                        </div>
+                        <div class="cycle-content">
+                            ${weeksHtml}
+                        </div>
+                    </div>
+                `;
+            });
         }
 
-        function deleteCycle() {
-            if(confirm("Supprimer ce cycle ?")) {
-                const data = getEmomData(); data.active = null; saveEmomData(data); renderEmomView();
+        function deleteCycle(id) {
+            if(confirm("Supprimer définitivement ce cycle ?")) {
+                const data = getEmomData();
+                data.active = data.active.filter(c => c.id !== id);
+                saveEmomData(data);
+                renderEmomView();
             }
         }
         function toggleArchives() {
@@ -307,16 +327,19 @@
         }
 
         // --- TIMER ENGINE ---
-        let currentWeekIndex = 0;
-
-        function openTimer(weekIdx) {
-            currentWeekIndex = weekIdx;
-            const week = activeCycle.weeks[weekIdx];
+        function openTimer(cycleId, weekIdx) {
+            runningCycleId = cycleId;
+            runningWeekIndex = weekIdx;
+            
+            // On retrouve le cycle correspondant
+            const cycle = activeCycles.find(c => c.id === cycleId);
+            const week = cycle.weeks[weekIdx];
+            
             totalRounds = week.duration;
             currentRound = 1; timerSeconds = 0;
 
-            document.getElementById('timerExoTitle').innerText = activeCycle.exo;
-            document.getElementById('timerLoadInfo').innerText = activeCycle.load; // Rappel de l'assistance
+            document.getElementById('timerExoTitle').innerText = cycle.exo;
+            document.getElementById('timerLoadInfo').innerText = cycle.load;
             document.getElementById('timerGoal').innerText = `Objectif : ${week.reps} reps / minute`;
             document.getElementById('timerBigDisplay').innerText = "00:00";
             document.getElementById('timerRoundDisplay').innerText = `Round 1/${totalRounds}`;
@@ -327,7 +350,8 @@
             document.getElementById('btnCloseTimer').style.display = 'block';
         }
 
-        function closeTimer() { stopTimerEngine(); document.getElementById('timer-overlay').style.display = 'none'; }
+        function closeTimer() { stopTimerEngine(false); document.getElementById('timer-overlay').style.display = 'none'; }
+        
         function startTimerEngine() {
             initAudio();
             document.getElementById('btnGo').style.display = 'none';
@@ -337,22 +361,33 @@
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(tick, 1000);
         }
-        function stopTimerEngine() {
+
+        function stopTimerEngine(save = true) {
             clearInterval(timerInterval);
-            if(confirm("Valider cette semaine comme terminée ?")) {
+            if(save && confirm("Valider la semaine ?")) {
                 const data = getEmomData();
-                data.active.weeks[currentWeekIndex].done = true;
-                if(currentWeekIndex === 5) {
-                    alert("Cycle Terminé ! Archivé.");
-                    data.archives.push(data.active); data.active = null;
+                // Trouver le cycle dans la DB fraîche
+                const cycleIndex = data.active.findIndex(c => c.id === runningCycleId);
+                
+                if (cycleIndex > -1) {
+                    data.active[cycleIndex].weeks[runningWeekIndex].done = true;
+                    // Si fini
+                    if(runningWeekIndex === 5) {
+                        alert("Cycle terminé ! Archivage...");
+                        data.archives.push(data.active[cycleIndex]);
+                        data.active.splice(cycleIndex, 1);
+                    }
+                    saveEmomData(data);
+                    renderEmomView();
                 }
-                saveEmomData(data); renderEmomView(); document.getElementById('timer-overlay').style.display = 'none';
+                document.getElementById('timer-overlay').style.display = 'none';
             } else {
                 document.getElementById('btnGo').style.display = 'block';
                 document.getElementById('btnCloseTimer').style.display = 'block';
                 document.getElementById('btnStop').style.display = 'none';
             }
         }
+
         function tick() {
             timerSeconds++;
             const timeLeft = 60 - timerSeconds;
@@ -360,7 +395,7 @@
             if (timeLeft === 10) { playBeep(600, 0.1); setTimeout(() => playBeep(600, 0.1), 200); }
             if (timerSeconds >= 60) {
                 timerSeconds = 0; currentRound++;
-                if(currentRound > totalRounds) { playBeep(880, 0.5); stopTimerEngine(); return; }
+                if(currentRound > totalRounds) { playBeep(880, 0.5); stopTimerEngine(true); return; }
                 playBeep(880, 0.4);
             }
             const dispTime = timeLeft < 10 ? `00:0${timeLeft}` : `00:${timeLeft}`;
@@ -368,7 +403,7 @@
             document.getElementById('timerRoundDisplay').innerText = `Round ${currentRound}/${totalRounds}`;
         }
 
-        // --- UTILS ---
+        // --- UTILS AUDIO & STANDARD ---
         function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
         function playBeep(freq, dur, type='sine') {
             if (!audioCtx) initAudio();
@@ -378,8 +413,6 @@
             osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + dur);
             osc.stop(audioCtx.currentTime + dur);
         }
-
-        // Fonctions Standard (Identiques V7)
         function saveUserWeight() { const w = document.getElementById('currentBodyWeight').value; if(w) localStorage.setItem(USER_WEIGHT_KEY, w); }
         function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn'); if(mode === 'standard') document.getElementById('btn-std').classList.add('active-std'); if(mode === 'bodyweight') document.getElementById('btn-bw').classList.add('active-bw'); if(mode === 'time') document.getElementById('btn-time').classList.add('active-time'); }
         function startNewSession() { const w = document.getElementById('currentBodyWeight').value; if(!w) { alert("Poids requis !"); document.getElementById('currentBodyWeight').focus(); return; } currentSession = { date: new Date().toISOString(), userWeightAtTime: parseFloat(w), exercises: [] }; bufferSets = []; document.getElementById('exoName').value = ''; document.getElementById('bufferList').innerHTML = '...'; document.getElementById('currentSessionList').innerHTML = ''; setMode('standard'); switchView('view-workout'); document.querySelector('.nav-bar').style.display = 'none'; }
