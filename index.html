@@ -2,428 +2,805 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muscu App V9 - Multi EMOM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MyTraining V1</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2196F3; --success: #4CAF50; --bg: #f4f4f9; --accent: #ff9800; --dark: #333; --danger: #ff5252; }
-        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background-color: var(--bg); padding-bottom: 90px; user-select: none; }
-        
-        /* Navigation */
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-        .nav-item { cursor: pointer; color: #aaa; font-weight: bold; text-align: center; flex: 1; font-size: 0.9em; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .nav-item span { font-size: 1.2em; margin-bottom: 2px; }
+        :root {
+            --primary: #4F46E5; /* Indigo vibrant */
+            --primary-light: #EEF2FF;
+            --secondary: #10B981; /* Emeraude */
+            --danger: #EF4444;
+            --accent: #F59E0B; /* Ambre */
+            --dark: #1F2937;
+            --gray: #6B7280;
+            --bg: #F3F4F6;
+            --card: #FFFFFF;
+            --radius: 16px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            margin: 0; padding: 0;
+            color: var(--dark);
+            padding-bottom: 100px; /* Espace pour la nav */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- HEADER --- */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
+            color: white;
+            padding: 30px 20px 40px 20px;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: -20px;
+        }
+        h1 { margin: 0; font-size: 1.5em; font-weight: 800; letter-spacing: -0.5px; }
+        .subtitle { opacity: 0.8; font-size: 0.9em; margin-top: 5px; }
+
+        /* --- LAYOUT --- */
+        .container { max-width: 600px; margin: 0 auto; padding: 0 15px; }
+        .view { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- CARDS --- */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        h2, h3 { margin-top: 0; font-weight: 700; color: var(--dark); font-size: 1.1em; margin-bottom: 15px; }
+
+        /* --- INPUTS --- */
+        input, select {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: all 0.2s;
+            background: #F9FAFB;
+        }
+        input:focus { outline: none; border-color: var(--primary); background: white; }
+
+        /* --- BUTTONS --- */
+        button {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            margin-top: 10px; transition: transform 0.1s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        button:active { transform: scale(0.97); }
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-success { background-color: var(--secondary); color: white; }
+        .btn-danger { background-color: var(--danger); color: white; box-shadow: none; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
+        .fab {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            width: auto; padding: 12px 30px; border-radius: 30px;
+            background: var(--dark); color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            z-index: 90; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            display: flex; justify-content: space-around;
+            padding: 10px 0 25px 0; z-index: 100;
+        }
+        .nav-item {
+            cursor: pointer; color: #9CA3AF; text-align: center; flex: 1;
+            font-size: 0.7em; font-weight: 600;
+            transition: color 0.2s;
+        }
+        .nav-icon { font-size: 1.5em; margin-bottom: 2px; display: block; }
         .nav-item.active { color: var(--primary); }
 
-        .view { display: none; animation: fadeIn 0.3s; }
-        .view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* --- ELEMENTS SPECIFIQUES --- */
+        
+        /* Selecteur de Mode & Tags */
+        .pill-selector { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .pill {
+            flex: 1; padding: 10px; text-align: center; border: 1px solid #E5E7EB;
+            border-radius: 10px; font-size: 0.85em; font-weight: 600; color: var(--gray);
+            background: white; white-space: nowrap; cursor: pointer; transition: 0.2s;
+        }
+        .pill.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+        
+        /* Listes */
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid #F3F4F6;
+        }
+        .history-item:last-child { border: none; }
+        .badge {
+            padding: 4px 8px; border-radius: 6px; font-size: 0.7em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        
+        /* Radar Chart Container */
+        .chart-wrapper { position: relative; height: 300px; width: 100%; margin-top: 10px; }
 
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        h2, h3 { margin-top: 0; color: var(--dark); }
-        
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; color: white; margin-top: 10px; font-weight: bold; transition: transform 0.1s;}
-        button:active { transform: scale(0.98); }
-        .btn-primary { background-color: var(--primary); }
-        .btn-success { background-color: var(--success); }
-        .btn-danger { background-color: var(--danger); }
-        .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        /* Weight Input Special */
+        .weight-card {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; border-radius: var(--radius); padding: 15px 20px;
+            margin-top: -30px; margin-bottom: 20px; position: relative; z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
 
-        /* Styles spécifiques Multi-Cycles */
-        .cycle-container { border-left: 5px solid var(--primary); margin-bottom: 20px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .cycle-header { padding: 15px; background: #fcfcfc; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-start; }
-        .cycle-content { padding: 10px; }
-        
-        .week-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .week-item.done { opacity: 0.5; text-decoration: line-through; background-color: #f9f9f9; }
-        .week-item.active { background-color: #e3f2fd; font-weight: bold; border-radius: 4px; border: 1px solid #bbdefb; }
-        .week-badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: bold; color:white; margin-left:5px; vertical-align: middle; }
-        
-        .timer-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 200; display:none; flex-direction:column; align-items:center; justify-content:center; }
-        .timer-display { font-size: 90px; font-weight: bold; color: var(--dark); font-variant-numeric: tabular-nums; }
-        
-        .weight-input-box { background-color: white; padding: 15px; border-radius: 12px; border-left: 6px solid var(--accent); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; }
-        
-        /* Mode Selector (Workout) */
-        .mode-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .mode-btn { flex: 1; padding: 12px 5px; font-size: 13px; text-align: center; border: 1px solid #eee; border-radius: 8px; cursor: pointer; background: #fff; color: #666; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
-        .mode-btn.active-std { background-color: var(--primary); color: white; border-color: var(--primary); }
-        .mode-btn.active-bw { background-color: var(--accent); color: white; border-color: var(--accent); }
-        .mode-btn.active-time { background-color: #607d8b; color: white; border-color: #607d8b; }
-        
-        .session-item { border-left: 5px solid var(--primary); padding-left: 12px; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 0 8px 8px 0; }
-        .set-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0; }
+        /* Timer Overlay */
+        .timer-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: var(--card); z-index: 200; display:none;
+            flex-direction:column; align-items:center; justify-content:center;
+        }
+        .timer-big { font-size: 5em; font-weight: 800; color: var(--dark); font-variant-numeric: tabular-nums; }
     </style>
 </head>
 <body>
 
-    <div id="view-history" class="view active">
-        <h2>📅 Tableau de bord</h2>
-        <div class="weight-input-box">
-            <div>
-                <strong>Mon Poids (kg)</strong><br>
-                <small style="color:#666">Pour le calcul PDC</small>
-            </div>
-            <input type="number" id="currentBodyWeight" style="width: 80px; text-align:center; font-size: 1.2em; border: 2px solid #eee;" placeholder="Ex: 75" onchange="saveUserWeight()">
-        </div>
-        <h3>Historique récent</h3>
-        <div id="historyList"></div>
-        <div style="height: 60px;"></div>
-        <button class="btn-success" onclick="startNewSession()" style="position:fixed; bottom: 85px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);">
-            + NOUVELLE SÉANCE
-        </button>
-    </div>
+    <header>
+        <h1>Mon Entraînement</h1>
+        <div class="subtitle" id="headerDate">Prêt à progresser ?</div>
+    </header>
 
-    <div id="view-workout" class="view">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <h2>🔥 En cours</h2>
-            <button class="btn-danger" style="width:auto; padding: 5px 12px; margin:0;" onclick="cancelSession()">X</button>
-        </div>
-        <div class="card">
-            <h3>Ajouter un exercice</h3>
-            <input type="text" id="exoName" list="exoSuggestions" placeholder="Nom (ex: Squat...)">
-            <datalist id="exoSuggestions"></datalist>
-            <div class="mode-selector">
-                <div class="mode-btn active-std" id="btn-std" onclick="setMode('standard')">🏋️ Fonte</div>
-                <div class="mode-btn" id="btn-bw" onclick="setMode('bodyweight')">🤸 PDC</div>
-                <div class="mode-btn" id="btn-time" onclick="setMode('time')">⏱️ Temps</div>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <div style="flex:1">
-                    <label id="labelVal1">Poids (kg)</label>
-                    <input type="number" id="inputVal1" inputmode="decimal">
+    <div class="container">
+
+        <div id="view-history" class="view active">
+            
+            <div class="weight-card">
+                <div>
+                    <div style="font-weight:bold; color:var(--dark);">Mon Poids</div>
+                    <div style="font-size:0.8em; color:var(--gray);">Nécessaire pour le PDC</div>
                 </div>
-                <div style="flex:1">
-                    <label id="labelVal2">Reps</label>
-                    <input type="number" id="inputVal2" inputmode="numeric">
+                <input type="number" id="currentBodyWeight" style="width: 80px; text-align:center; margin:0; border:none; background:#F3F4F6; font-weight:bold; color:var(--primary);" placeholder="kg" onchange="saveUserWeight()">
+            </div>
+
+            <div class="card">
+                <h3>Historique Récent</h3>
+                <div id="historyList"></div>
+            </div>
+
+            <button class="fab" onclick="startNewSession()">
+                <span style="font-size:1.5em;">+</span> Nouvelle Séance
+            </button>
+        </div>
+
+        <div id="view-workout" class="view">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; margin-bottom:10px;">
+                <h2>Séance en cours</h2>
+                <button class="btn-danger" style="width:auto; padding:8px 12px; margin:0;" onclick="cancelSession()">Annuler</button>
+            </div>
+
+            <div class="card">
+                <h3>Nouvel Exercice</h3>
+                
+                <input type="text" id="exoName" list="exoSuggestions" placeholder="Nom de l'exercice..." onchange="autoFillCategory()">
+                <datalist id="exoSuggestions"></datalist>
+
+                <label style="font-size:0.8em; color:var(--gray); margin-left:5px;">Zone musculaire :</label>
+                <div class="pill-selector">
+                    <div class="pill active" onclick="setCategory(this, 'Push')">Poussée</div>
+                    <div class="pill" onclick="setCategory(this, 'Pull')">Tirage</div>
+                    <div class="pill" onclick="setCategory(this, 'Legs')">Jambes</div>
+                    <div class="pill" onclick="setCategory(this, 'Core')">Gainage</div>
+                </div>
+
+                <label style="font-size:0.8em; color:var(--gray); margin-left:5px;">Mode :</label>
+                <div class="pill-selector">
+                    <div class="pill active" id="btn-std" onclick="setMode('standard')">Fonte</div>
+                    <div class="pill" id="btn-bw" onclick="setMode('bodyweight')">PDC + Lest</div>
+                    <div class="pill" id="btn-time" onclick="setMode('time')">Chrono</div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex:1">
+                        <label id="labelVal1" style="font-size:0.8em; font-weight:bold;">Poids (kg)</label>
+                        <input type="number" id="inputVal1" inputmode="decimal">
+                    </div>
+                    <div style="flex:1">
+                        <label id="labelVal2" style="font-size:0.8em; font-weight:bold;">Reps</label>
+                        <input type="number" id="inputVal2" inputmode="numeric">
+                    </div>
+                </div>
+
+                <button class="btn-outline" onclick="addSetToBuffer()">+ Ajouter Série</button>
+
+                <div id="bufferList" style="margin-top: 15px; background: var(--bg); padding: 10px; border-radius: 8px; min-height: 40px; font-size:0.9em;">
+                    <em style="color:var(--gray);">Séries en attente...</em>
+                </div>
+
+                <button class="btn-primary" onclick="confirmExercise()">Valider l'exercice</button>
+            </div>
+
+            <h3 style="margin-top:20px;">Résumé Séance</h3>
+            <div id="currentSessionList"></div>
+            <button class="btn-success" onclick="finishSession()" style="margin-bottom:30px;">Terminer & Sauvegarder</button>
+        </div>
+
+        <div id="view-stats" class="view">
+            <div class="card" style="margin-top:20px;">
+                <h3>🕸️ Équilibre du Physique</h3>
+                <p style="font-size:0.8em; color:var(--gray); margin-bottom:10px;">Basé sur le nombre total de séries effectuées.</p>
+                <div class="chart-wrapper">
+                    <canvas id="radarChart"></canvas>
                 </div>
             </div>
-            <button class="btn-outline" onclick="addSetToBuffer()">Ajouter la série</button>
-            <div id="bufferList" style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; min-height: 40px;">
-                <em style="color:#999; font-size:0.9em;">Séries en attente...</em>
-            </div>
-            <button class="btn-primary" onclick="confirmExercise()">Valider l'exercice</button>
-        </div>
-        <h3 style="margin-top:20px;">Résumé :</h3>
-        <div id="currentSessionList"></div>
-        <button class="btn-success" onclick="finishSession()">Terminer la séance</button>
-    </div>
 
-    <div id="view-stats" class="view">
-        <h2>📈 Progression</h2>
-        <div class="card">
-            <label>Exercice :</label>
-            <select id="statExoSelect" onchange="updateChart()"></select>
-            <div class="chart-container">
-                <canvas id="progChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-emom" class="view">
-        <h2>⏱️ Mes Cycles EMOM</h2>
-        
-        <button class="btn-primary" onclick="toggleCreateForm()" style="margin-bottom: 20px;">+ Créer un nouveau cycle</button>
-        
-        <div id="emom-create" class="card" style="display:none; border: 2px solid var(--primary);">
-            <h3 style="color:var(--primary)">🚀 Nouveau Cycle (6 semaines)</h3>
-            <label>Exercice (ex: Pike Push-ups)</label>
-            <input type="text" id="newCycleExo">
-            <label>Assistance / Lest (ex: Au sol, Pieds surélevés...)</label>
-            <input type="text" id="newCycleLoad" placeholder="Pour t'en souvenir">
-            <label>Répétitions de base (par minute)</label>
-            <input type="number" id="newCycleReps" placeholder="Ex: 5">
-            <div style="display:flex; gap:10px;">
-                <button class="btn-success" onclick="createEmomCycle()">Valider</button>
-                <button class="btn-outline" onclick="toggleCreateForm()">Annuler</button>
+            <div class="card">
+                <h3>📈 Progression par Exercice</h3>
+                <select id="statExoSelect" onchange="updateLineChart()"></select>
+                <div class="chart-wrapper">
+                    <canvas id="progChart"></canvas>
+                </div>
             </div>
         </div>
 
-        <div id="activeCyclesList"></div>
+        <div id="view-emom" class="view">
+            <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+                <h2>Cycles EMOM</h2>
+                <button class="btn-primary" onclick="toggleCreateForm()" style="width:auto; padding:8px 15px; font-size:0.9em;">+ Nouveau</button>
+            </div>
+            
+            <div id="emom-create" class="card" style="display:none; border: 2px solid var(--primary);">
+                <h3 style="color:var(--primary)">Configurer Cycle</h3>
+                <input type="text" id="newCycleExo" placeholder="Exercice (ex: Tractions)">
+                <input type="text" id="newCycleLoad" placeholder="Assistance (ex: Elastique vert)">
+                <input type="number" id="newCycleReps" placeholder="Reps de base (ex: 5)">
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-success" onclick="createEmomCycle()">Créer</button>
+                    <button class="btn-outline" onclick="toggleCreateForm()">Annuler</button>
+                </div>
+            </div>
 
-        <div class="card">
-            <h3 onclick="toggleArchives()" style="cursor:pointer; display:flex; justify-content:space-between; margin-bottom:0;">
-                📜 Archives Terminées <span>▼</span>
-            </h3>
-            <div id="emom-archives" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+            <div id="activeCyclesList"></div>
+
+            <div class="card" style="margin-top:20px;">
+                <h3 onclick="toggleArchives()" style="cursor:pointer; display:flex; justify-content:space-between; margin:0;">
+                    Historique Terminés <span>▼</span>
+                </h3>
+                <div id="emom-archives" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+            </div>
         </div>
+
     </div>
 
     <div id="timer-overlay" class="timer-overlay">
-        <h2 id="timerExoTitle">...</h2>
-        <p id="timerLoadInfo" style="color:#f57c00; font-weight:bold;">...</p>
-        <p id="timerGoal" style="font-size:1.2em; margin-bottom:10px;">...</p>
+        <h2 id="timerExoTitle" style="margin-bottom:5px;">...</h2>
+        <div id="timerLoadInfo" style="color:var(--accent); font-weight:bold; margin-bottom:20px;">...</div>
         
-        <div class="timer-display" id="timerBigDisplay">00:00</div>
-        <div style="font-size:2em; margin-bottom:20px; color:#666;" id="timerRoundDisplay">Round 1/10</div>
+        <div class="timer-big" id="timerBigDisplay">00:00</div>
+        <div style="font-size:1.5em; color:var(--gray); margin-bottom:40px;" id="timerRoundDisplay">Round 1/10</div>
         
-        <div style="display:flex; gap:20px; width:80%;">
-            <button class="btn-success" onclick="startTimerEngine()" id="btnGo">GO !</button>
+        <div style="width:80%; max-width:300px;">
+            <button class="btn-success" onclick="startTimerEngine()" id="btnGo">DÉMARRER</button>
             <button class="btn-danger" onclick="stopTimerEngine()" id="btnStop" style="display:none;">STOP & VALIDER</button>
-             <button class="btn-outline" onclick="closeTimer()" id="btnCloseTimer" style="display:none;">Fermer</button>
+            <button class="btn-outline" onclick="closeTimer()" id="btnCloseTimer" style="margin-top:15px;">Fermer</button>
         </div>
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" onclick="switchView('view-history', this)"><span>📅</span>Hist.</div>
-        <div class="nav-item" onclick="switchView('view-stats', this)"><span>📈</span>Stats</div>
-        <div class="nav-item" onclick="switchView('view-emom', this)"><span>⏱️</span>Cycles</div>
+        <div class="nav-item active" onclick="switchView('view-history', this)">
+            <span class="nav-icon">📅</span>Journal
+        </div>
+        <div class="nav-item" onclick="switchView('view-stats', this)">
+            <span class="nav-icon">📊</span>Stats
+        </div>
+        <div class="nav-item" onclick="switchView('view-emom', this)">
+            <span class="nav-icon">⏱️</span>Cycles
+        </div>
     </div>
 
     <script>
-        const DB_KEY = 'muscu_app_v4';
-        const USER_WEIGHT_KEY = 'user_weight_v4';
-        const EMOM_KEY = 'emom_cycles_v3'; // Nouvelle clé V3 pour le tableau
+        // --- CONFIGURATION ---
+        const DB_KEY = 'muscu_data_final';
+        const CONFIG_KEY = 'muscu_config_final';
+        const EMOM_KEY = 'muscu_emom_final';
+        const LIBRARY_KEY = 'muscu_library_final'; // Pour sauvegarder les noms d'exos et catégories
 
+        // --- ETAT GLOBAL ---
         let currentSession = null;
         let bufferSets = [];
-        let currentMode = 'standard'; 
-        let myChart = null;
-
-        // Vars EMOM
-        let activeCycles = []; // Tableau maintenant !
-        let runningCycleId = null; // ID du cycle en cours de chrono
-        let runningWeekIndex = 0;
+        let currentMode = 'standard';
+        let currentCategory = 'Push'; // Default
         
+        let lineChart = null;
+        let radarChart = null;
+
+        // Vars Timer
+        let activeCycles = [];
+        let runningCycleId = null;
+        let runningWeekIndex = 0;
         let timerInterval = null;
         let timerSeconds = 0;
         let currentRound = 1;
         let totalRounds = 10;
         let audioCtx = null;
 
+        // --- INITIALISATION ---
         window.onload = function() {
+            // Date Header
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            document.getElementById('headerDate').innerText = new Date().toLocaleDateString('fr-FR', options);
+            
+            // Chargement Poids
+            const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+            if(config.weight) document.getElementById('currentBodyWeight').value = config.weight;
+
+            updateDatalist();
             renderHistory();
             renderEmomView();
-            const savedWeight = localStorage.getItem(USER_WEIGHT_KEY);
-            if(savedWeight) document.getElementById('currentBodyWeight').value = savedWeight;
         }
 
+        // --- NAVIGATION ---
         function switchView(viewId, navElement) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
+            
             if(navElement) {
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                 navElement.classList.add('active');
             }
+
             if(viewId === 'view-history') renderHistory();
-            if(viewId === 'view-stats') initStats();
+            if(viewId === 'view-stats') { initStats(); initRadar(); }
             if(viewId === 'view-emom') renderEmomView();
         }
 
-        // --- GESTION EMOM MULTI ---
-        function getEmomData() { 
-            // V3 : active est un Array []
-            return JSON.parse(localStorage.getItem(EMOM_KEY) || '{ "active": [], "archives": [] }'); 
+        // --- GESTION BIBLIOTHEQUE EXERCICES ---
+        function getLibrary() {
+            return JSON.parse(localStorage.getItem(LIBRARY_KEY) || '{}'); // Format: { "Squat": "Legs", "Traction": "Pull" }
         }
-        function saveEmomData(data) { localStorage.setItem(EMOM_KEY, JSON.stringify(data)); }
 
-        function toggleCreateForm() {
-            const form = document.getElementById('emom-create');
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        function saveToLibrary(name, category) {
+            const lib = getLibrary();
+            lib[name] = category;
+            localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+            updateDatalist();
         }
+
+        function updateDatalist() {
+            const lib = getLibrary();
+            const dl = document.getElementById('exoSuggestions');
+            dl.innerHTML = '';
+            Object.keys(lib).sort().forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                dl.appendChild(opt);
+            });
+        }
+
+        function autoFillCategory() {
+            const name = document.getElementById('exoName').value;
+            const lib = getLibrary();
+            if(lib[name]) {
+                // Si l'exo existe, on sélectionne sa catégorie auto
+                setCategory(null, lib[name]); // Fonction modifiée pour gérer l'UI
+                // Update UI visually
+                document.querySelectorAll('.pill-selector .pill').forEach(p => {
+                    if(p.innerText === getCategoryLabel(lib[name])) { // Helper needed
+                        p.click();
+                    }
+                });
+            }
+        }
+        
+        function getCategoryLabel(catCode) {
+            if(catCode === 'Push') return 'Poussée';
+            if(catCode === 'Pull') return 'Tirage';
+            if(catCode === 'Legs') return 'Jambes';
+            if(catCode === 'Core') return 'Gainage';
+            return 'Poussée';
+        }
+
+        // --- UI HELPERS ---
+        function saveUserWeight() {
+            const w = document.getElementById('currentBodyWeight').value;
+            const config = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+            config.weight = w;
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+        }
+
+        function setCategory(el, cat) {
+            currentCategory = cat;
+            if(el) { // Si clic manuel
+                el.parentElement.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+                el.classList.add('active');
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('#btn-std, #btn-bw, #btn-time').forEach(b => b.classList.remove('active'));
+            if(mode === 'standard') document.getElementById('btn-std').classList.add('active');
+            if(mode === 'bodyweight') document.getElementById('btn-bw').classList.add('active');
+            if(mode === 'time') document.getElementById('btn-time').classList.add('active');
+            
+            // Labels
+            const l1 = document.getElementById('labelVal1');
+            const i1 = document.getElementById('inputVal1');
+            const l2 = document.getElementById('labelVal2');
+            const i2 = document.getElementById('inputVal2');
+
+            if(mode === 'standard') { l1.innerText="Poids (kg)"; i1.placeholder="60"; l2.innerText="Reps"; i2.placeholder="10"; }
+            else if(mode === 'bodyweight') { l1.innerText="Lest (kg)"; i1.placeholder="0"; l2.innerText="Reps"; i2.placeholder="10"; }
+            else { l1.innerText="Lest (kg)"; i1.placeholder="0"; l2.innerText="Temps (s)"; i2.placeholder="45"; }
+        }
+
+        // --- LOGIQUE SEANCE ---
+        function startNewSession() {
+            const w = document.getElementById('currentBodyWeight').value;
+            if(!w) { alert("Renseigne ton poids en haut !"); return; }
+            currentSession = { date: new Date().toISOString(), userWeight: parseFloat(w), exercises: [] };
+            bufferSets = [];
+            
+            // Reset UI
+            document.getElementById('exoName').value = '';
+            document.getElementById('currentSessionList').innerHTML = '';
+            document.getElementById('bufferList').innerHTML = '<em style="color:var(--gray)">En attente...</em>';
+            setMode('standard');
+            
+            switchView('view-workout');
+            document.querySelector('.nav-bar').style.display = 'none'; // Mode focus
+        }
+
+        function cancelSession() {
+            if(confirm("Annuler la séance ?")) {
+                document.querySelector('.nav-bar').style.display = 'flex';
+                switchView('view-history');
+            }
+        }
+
+        function addSetToBuffer() {
+            let v1 = document.getElementById('inputVal1').value;
+            let v2 = document.getElementById('inputVal2').value;
+            
+            if(!v2) return; // Reps obligatoires
+            if(currentMode !== 'time' && !v1) v1 = 0; // Poids 0 par défaut
+
+            bufferSets.push({ val1: parseFloat(v1||0), val2: parseFloat(v2), mode: currentMode });
+            
+            // Render Buffer
+            let html = '';
+            bufferSets.forEach((s, i) => {
+                let txt = s.mode==='time' ? `${s.val2}s` : `${s.val2} reps`;
+                let w = s.val1 > 0 ? `@ ${s.val1}kg` : '';
+                html += `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee;"><span>Série ${i+1}</span><span>${txt} ${w}</span></div>`;
+            });
+            document.getElementById('bufferList').innerHTML = html;
+        }
+
+        function confirmExercise() {
+            const name = document.getElementById('exoName').value;
+            if(!name || bufferSets.length === 0) return;
+
+            // Sauvegarder dans la librairie pour l'autocomplete futur
+            saveToLibrary(name, currentCategory);
+
+            currentSession.exercises.push({
+                name: name,
+                category: currentCategory,
+                type: bufferSets[0].mode,
+                sets: [...bufferSets]
+            });
+
+            // Update Résumé
+            const div = document.getElementById('currentSessionList');
+            let info = bufferSets.length + " séries";
+            div.innerHTML += `
+                <div class="card" style="padding:10px; margin-bottom:10px; border-left:4px solid var(--primary);">
+                    <div style="font-weight:bold;">${name}</div>
+                    <div style="font-size:0.8em; color:var(--gray);">${info} • ${getCategoryLabel(currentCategory)}</div>
+                </div>
+            `;
+
+            // Reset Form
+            bufferSets = [];
+            document.getElementById('exoName').value = '';
+            document.getElementById('inputVal1').value = '';
+            document.getElementById('inputVal2').value = '';
+            document.getElementById('bufferList').innerHTML = '<em style="color:var(--gray)">En attente...</em>';
+        }
+
+        function finishSession() {
+            if(currentSession.exercises.length === 0) return;
+            
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            db.push(currentSession);
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            
+            document.querySelector('.nav-bar').style.display = 'flex';
+            switchView('view-history');
+        }
+
+        // --- RENDU HISTORIQUE ---
+        function renderHistory() {
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            db.sort((a,b) => new Date(b.date) - new Date(a.date));
+            
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            
+            if(db.length === 0) { list.innerHTML = '<div style="text-align:center; color:var(--gray); padding:20px;">Aucune séance. Commence maintenant !</div>'; return; }
+
+            db.forEach(s => {
+                const date = new Date(s.date).toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short'});
+                let exosList = s.exercises.map(e => e.name).join(', ');
+                if(exosList.length > 50) exosList = exosList.substring(0, 50) + '...';
+                
+                list.innerHTML += `
+                    <div class="history-item">
+                        <div>
+                            <div style="font-weight:bold;">${date}</div>
+                            <div style="font-size:0.8em; color:var(--gray);">${s.exercises.length} exercices</div>
+                            <div style="font-size:0.8em; color:var(--primary); margin-top:2px;">${exosList}</div>
+                        </div>
+                        <div class="badge" style="background:var(--primary-light); color:var(--primary);">${s.userWeight}kg</div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- STATS & RADAR ---
+        function initRadar() {
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            
+            // Calculer le volume (nombre de séries) par catégorie
+            let stats = { 'Push': 0, 'Pull': 0, 'Legs': 0, 'Core': 0 };
+            
+            db.forEach(s => {
+                s.exercises.forEach(e => {
+                    const cat = e.category || 'Push'; // Fallback
+                    if(stats[cat] !== undefined) stats[cat] += e.sets.length;
+                });
+            });
+
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if(radarChart) radarChart.destroy();
+
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Poussée', 'Tirage', 'Jambes', 'Gainage'],
+                    datasets: [{
+                        label: 'Volume (Séries totales)',
+                        data: [stats.Push, stats.Pull, stats.Legs, stats.Core],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                    }]
+                },
+                options: {
+                    scales: { r: { suggestMin: 0, ticks: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function initStats() {
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            const select = document.getElementById('statExoSelect');
+            const unique = new Set();
+            db.forEach(s => s.exercises.forEach(e => unique.add(e.name)));
+            
+            select.innerHTML = '';
+            unique.forEach(n => {
+                const o = document.createElement('option');
+                o.value = n; o.innerText = n;
+                select.appendChild(o);
+            });
+            if(unique.size > 0) updateLineChart();
+        }
+
+        function updateLineChart() {
+            const name = document.getElementById('statExoSelect').value;
+            const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            db.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+            const labels = [];
+            const data = [];
+
+            db.forEach(s => {
+                const match = s.exercises.find(e => e.name === name);
+                if(match) {
+                    labels.push(new Date(s.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short'}));
+                    
+                    // Calcul Performance
+                    let perf = 0;
+                    if(match.type === 'time') perf = Math.max(...match.sets.map(x=>x.val2));
+                    else if(match.type === 'standard') perf = Math.max(...match.sets.map(x=>x.val1));
+                    else if(match.type === 'bodyweight') {
+                         const maxLest = Math.max(...match.sets.map(x=>x.val1));
+                         perf = s.userWeight + maxLest;
+                    }
+                    data.push(perf);
+                }
+            });
+
+            const ctx = document.getElementById('progChart').getContext('2d');
+            if(lineChart) lineChart.destroy();
+
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Meilleure Perf',
+                        data: data,
+                        borderColor: '#10B981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true, tension: 0.3
+                    }]
+                },
+                options: { maintainAspectRatio: false, responsive: true }
+            });
+        }
+
+        // --- EMOM MULTI ---
+        function toggleCreateForm() {
+            const el = document.getElementById('emom-create');
+            el.style.display = el.style.display==='none'?'block':'none';
+        }
+
+        function getEmomData() { return JSON.parse(localStorage.getItem(EMOM_KEY) || '{ "active": [], "archives": [] }'); }
+        function saveEmomData(d) { localStorage.setItem(EMOM_KEY, JSON.stringify(d)); }
 
         function createEmomCycle() {
             const exo = document.getElementById('newCycleExo').value;
             const load = document.getElementById('newCycleLoad').value || "Standard";
             const base = parseInt(document.getElementById('newCycleReps').value);
-            
-            if(!exo || !base) { alert("Remplis tout !"); return; }
+            if(!exo || !base) return;
 
             const weeks = [
-                { id: 1, duration: 10, reps: base, label: "Volume Base", done: false },
-                { id: 2, duration: 12, reps: base, label: "Volume +", done: false },
-                { id: 3, duration: 15, reps: base, label: "Volume Max", done: false },
-                { id: 4, duration: 10, reps: base + 1, label: "Densité", done: false },
-                { id: 5, duration: 12, reps: base + 1, label: "Overreach", done: false },
-                { id: 6, duration: 10, reps: Math.ceil(base/2), label: "Deload", done: false }
+                { id:1, d:10, r:base, l:"Base" }, { id:2, d:12, r:base, l:"Vol+" },
+                { id:3, d:15, r:base, l:"VolMax" }, { id:4, d:10, r:base+1, l:"Densité" },
+                { id:5, d:12, r:base+1, l:"Peak" }, { id:6, d:10, r:Math.ceil(base/2), l:"Deload" }
             ];
 
-            const newCycle = { 
-                id: Date.now(), // ID Unique
-                exo, load, baseReps: base, startDate: new Date().toISOString(), weeks 
-            };
-            
-            const data = getEmomData();
-            data.active.push(newCycle); // On ajoute au tableau
-            saveEmomData(data);
-            
-            toggleCreateForm();
-            renderEmomView();
+            const newC = { id:Date.now(), exo, load, base, start:new Date().toISOString(), weeks };
+            const d = getEmomData(); d.active.push(newC); saveEmomData(d);
+            toggleCreateForm(); renderEmomView();
         }
 
         function renderEmomView() {
-            const data = getEmomData();
-            activeCycles = data.active; // Mise en cache
-            
+            const d = getEmomData();
+            activeCycles = d.active;
+
             // Archives
-            const archiveDiv = document.getElementById('emom-archives');
-            archiveDiv.innerHTML = '';
-            data.archives.forEach(c => {
-                const dateStr = new Date(c.startDate).toLocaleDateString();
-                archiveDiv.innerHTML += `<div style="padding:5px; border-bottom:1px solid #eee;">✅ <strong>${c.exo}</strong> (${c.load}) <br><small>${dateStr}</small></div>`;
+            const arch = document.getElementById('emom-archives');
+            arch.innerHTML = '';
+            d.archives.forEach(c => {
+                arch.innerHTML += `<div style="padding:10px; border-bottom:1px solid #eee; font-size:0.9em;">✅ <strong>${c.exo}</strong> <span style="color:var(--gray)">${new Date(c.start).toLocaleDateString()}</span></div>`;
             });
 
-            // Liste des cycles actifs
-            const listDiv = document.getElementById('activeCyclesList');
-            listDiv.innerHTML = '';
+            // Actifs
+            const list = document.getElementById('activeCyclesList');
+            list.innerHTML = '';
+            
+            if(activeCycles.length === 0) { list.innerHTML='<div style="text-align:center; padding:20px; color:var(--gray)">Aucun cycle. Crée-en un !</div>'; return; }
 
-            if (activeCycles.length === 0) {
-                listDiv.innerHTML = '<p style="text-align:center; color:#999;">Aucun cycle actif. Crée-en un !</p>';
-                return;
-            }
+            activeCycles.forEach(c => {
+                let htmlWeeks = '';
+                c.weeks.forEach((w, i) => {
+                    let done = w.done ? 'opacity:0.5; text-decoration:line-through' : '';
+                    let active = (!w.done && (i===0 || c.weeks[i-1].done)) ? 'background:var(--primary-light); color:var(--primary); font-weight:bold;' : '';
+                    let btn = (!w.done && (i===0 || c.weeks[i-1].done)) ? `<button class="btn-primary" style="padding:5px 10px; margin:0; width:auto; font-size:0.8em;" onclick="openTimer(${c.id},${i})">GO</button>` : (w.done ? '✅' : '🔒');
 
-            // Génération des cartes pour chaque cycle
-            activeCycles.forEach(cycle => {
-                let weeksHtml = '';
-                cycle.weeks.forEach((w, idx) => {
-                    let statusClass = w.done ? 'done' : '';
-                    let activeClass = (!w.done && (idx === 0 || cycle.weeks[idx-1].done)) ? 'active' : '';
-                    let badgeColor = idx < 3 ? '#2196F3' : (idx < 5 ? '#ff9800' : '#4CAF50');
-
-                    let actionBtn = (!w.done && activeClass) ? 
-                        `<button class="btn-success" style="padding:4px 8px; font-size:0.8em; margin:0; width:auto;" onclick="openTimer(${cycle.id}, ${idx})">GO ▶</button>` :
-                        (w.done ? '✅' : '🔒');
-
-                    weeksHtml += `
-                        <div class="week-item ${statusClass} ${activeClass}">
-                            <div style="font-size:0.9em;">
-                                <strong>Sem ${w.id}</strong> <span class="week-badge" style="background:${badgeColor}">${w.label}</span>
-                                <span style="color:#666; margin-left:5px;">${w.duration}' × ${w.reps}</span>
-                            </div>
-                            <div>${actionBtn}</div>
-                        </div>
-                    `;
+                    htmlWeeks += `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #f0f0f0; ${done}; ${active}; border-radius:8px;">
+                        <span>S${w.id} • ${w.d}' × ${w.r}</span>
+                        <span>${btn}</span>
+                    </div>`;
                 });
 
-                listDiv.innerHTML += `
-                    <div class="cycle-container">
-                        <div class="cycle-header">
+                list.innerHTML += `
+                    <div class="card" style="border-left:5px solid var(--secondary);">
+                        <div style="display:flex; justify-content:space-between;">
                             <div>
-                                <h3 style="margin:0; font-size:1.1em;">${cycle.exo}</h3>
-                                <div style="font-size:0.85em; background:#eee; display:inline-block; padding:2px 6px; border-radius:4px; margin-top:4px;">${cycle.load}</div>
+                                <h3 style="margin:0">${c.exo}</h3>
+                                <div style="font-size:0.8em; color:var(--accent); margin-bottom:10px;">${c.load}</div>
                             </div>
-                            <button class="btn-danger" style="width:auto; padding:5px 8px; font-size:0.75em; margin:0;" onclick="deleteCycle(${cycle.id})">🗑️</button>
+                            <button class="btn-danger" style="width:auto; height:30px; padding:0 10px; font-size:0.8em;" onclick="deleteCycle(${c.id})">Suppr</button>
                         </div>
-                        <div class="cycle-content">
-                            ${weeksHtml}
-                        </div>
+                        ${htmlWeeks}
                     </div>
                 `;
             });
         }
 
         function deleteCycle(id) {
-            if(confirm("Supprimer définitivement ce cycle ?")) {
-                const data = getEmomData();
-                data.active = data.active.filter(c => c.id !== id);
-                saveEmomData(data);
-                renderEmomView();
+            if(confirm("Supprimer ?")) {
+                const d = getEmomData(); d.active = d.active.filter(c=>c.id!==id); saveEmomData(d); renderEmomView();
             }
         }
         function toggleArchives() {
-            const el = document.getElementById('emom-archives'); el.style.display = el.style.display === 'none' ? 'block' : 'none';
+             const el = document.getElementById('emom-archives'); el.style.display = el.style.display==='none'?'block':'none';
         }
 
-        // --- TIMER ENGINE ---
-        function openTimer(cycleId, weekIdx) {
-            runningCycleId = cycleId;
-            runningWeekIndex = weekIdx;
+        // --- TIMER ---
+        function openTimer(cid, wid) {
+            runningCycleId = cid; runningWeekIndex = wid;
+            const cycle = activeCycles.find(c=>c.id===cid);
+            const week = cycle.weeks[wid];
+            totalRounds = week.d; currentRound=1; timerSeconds=0;
             
-            // On retrouve le cycle correspondant
-            const cycle = activeCycles.find(c => c.id === cycleId);
-            const week = cycle.weeks[weekIdx];
-            
-            totalRounds = week.duration;
-            currentRound = 1; timerSeconds = 0;
-
             document.getElementById('timerExoTitle').innerText = cycle.exo;
-            document.getElementById('timerLoadInfo').innerText = cycle.load;
-            document.getElementById('timerGoal').innerText = `Objectif : ${week.reps} reps / minute`;
+            document.getElementById('timerLoadInfo').innerText = `${cycle.load} • ${week.r} reps/min`;
             document.getElementById('timerBigDisplay').innerText = "00:00";
             document.getElementById('timerRoundDisplay').innerText = `Round 1/${totalRounds}`;
-            
             document.getElementById('timer-overlay').style.display = 'flex';
-            document.getElementById('btnGo').style.display = 'block';
-            document.getElementById('btnStop').style.display = 'none';
-            document.getElementById('btnCloseTimer').style.display = 'block';
+            document.getElementById('btnGo').style.display='block';
+            document.getElementById('btnStop').style.display='none';
+            document.getElementById('btnCloseTimer').style.display='block';
         }
-
-        function closeTimer() { stopTimerEngine(false); document.getElementById('timer-overlay').style.display = 'none'; }
+        
+        function closeTimer() { stopTimerEngine(false); document.getElementById('timer-overlay').style.display='none'; }
         
         function startTimerEngine() {
-            initAudio();
-            document.getElementById('btnGo').style.display = 'none';
-            document.getElementById('btnCloseTimer').style.display = 'none';
-            document.getElementById('btnStop').style.display = 'block';
-            playBeep(880, 0.4);
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            document.getElementById('btnGo').style.display='none';
+            document.getElementById('btnCloseTimer').style.display='none';
+            document.getElementById('btnStop').style.display='block';
+            playBeep(880,0.3);
             if(timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(tick, 1000);
         }
 
-        function stopTimerEngine(save = true) {
+        function stopTimerEngine(save=true) {
             clearInterval(timerInterval);
             if(save && confirm("Valider la semaine ?")) {
-                const data = getEmomData();
-                // Trouver le cycle dans la DB fraîche
-                const cycleIndex = data.active.findIndex(c => c.id === runningCycleId);
-                
-                if (cycleIndex > -1) {
-                    data.active[cycleIndex].weeks[runningWeekIndex].done = true;
-                    // Si fini
-                    if(runningWeekIndex === 5) {
-                        alert("Cycle terminé ! Archivage...");
-                        data.archives.push(data.active[cycleIndex]);
-                        data.active.splice(cycleIndex, 1);
+                const d = getEmomData();
+                const cIdx = d.active.findIndex(c=>c.id===runningCycleId);
+                if(cIdx>-1) {
+                    d.active[cIdx].weeks[runningWeekIndex].done = true;
+                    if(runningWeekIndex===5) {
+                        alert("Cycle Fini !"); d.archives.push(d.active[cIdx]); d.active.splice(cIdx,1);
                     }
-                    saveEmomData(data);
-                    renderEmomView();
+                    saveEmomData(d); renderEmomView();
                 }
-                document.getElementById('timer-overlay').style.display = 'none';
+                document.getElementById('timer-overlay').style.display='none';
             } else {
-                document.getElementById('btnGo').style.display = 'block';
-                document.getElementById('btnCloseTimer').style.display = 'block';
-                document.getElementById('btnStop').style.display = 'none';
+                document.getElementById('btnGo').style.display='block';
+                document.getElementById('btnCloseTimer').style.display='block';
+                document.getElementById('btnStop').style.display='none';
             }
         }
 
         function tick() {
             timerSeconds++;
-            const timeLeft = 60 - timerSeconds;
-            if (timeLeft === 30) playBeep(300, 0.2, 'triangle');
-            if (timeLeft === 10) { playBeep(600, 0.1); setTimeout(() => playBeep(600, 0.1), 200); }
-            if (timerSeconds >= 60) {
-                timerSeconds = 0; currentRound++;
-                if(currentRound > totalRounds) { playBeep(880, 0.5); stopTimerEngine(true); return; }
-                playBeep(880, 0.4);
+            const left = 60-timerSeconds;
+            if(left===30) playBeep(300,0.2,'triangle');
+            if(left===10) { playBeep(600,0.1); setTimeout(()=>playBeep(600,0.1),200); }
+            if(timerSeconds>=60) {
+                timerSeconds=0; currentRound++;
+                if(currentRound>totalRounds) { playBeep(880,0.5); stopTimerEngine(true); return; }
+                playBeep(880,0.3);
             }
-            const dispTime = timeLeft < 10 ? `00:0${timeLeft}` : `00:${timeLeft}`;
-            document.getElementById('timerBigDisplay').innerText = dispTime;
-            document.getElementById('timerRoundDisplay').innerText = `Round ${currentRound}/${totalRounds}`;
+            const str = left<10 ? `00:0${left}` : `00:${left}`;
+            document.getElementById('timerBigDisplay').innerText=str;
+            document.getElementById('timerRoundDisplay').innerText=`Round ${currentRound}/${totalRounds}`;
         }
-
-        // --- UTILS AUDIO & STANDARD ---
-        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-        function playBeep(freq, dur, type='sine') {
-            if (!audioCtx) initAudio();
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = type; osc.frequency.value = freq;
-            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + dur);
-            osc.stop(audioCtx.currentTime + dur);
+        
+        function playBeep(f,d,t='sine') {
+            if(!audioCtx) return;
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.type=t; o.frequency.value=f;
+            o.start(); g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime+d);
+            o.stop(audioCtx.currentTime+d);
         }
-        function saveUserWeight() { const w = document.getElementById('currentBodyWeight').value; if(w) localStorage.setItem(USER_WEIGHT_KEY, w); }
-        function setMode(mode) { currentMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.className = 'mode-btn'); if(mode === 'standard') document.getElementById('btn-std').classList.add('active-std'); if(mode === 'bodyweight') document.getElementById('btn-bw').classList.add('active-bw'); if(mode === 'time') document.getElementById('btn-time').classList.add('active-time'); }
-        function startNewSession() { const w = document.getElementById('currentBodyWeight').value; if(!w) { alert("Poids requis !"); document.getElementById('currentBodyWeight').focus(); return; } currentSession = { date: new Date().toISOString(), userWeightAtTime: parseFloat(w), exercises: [] }; bufferSets = []; document.getElementById('exoName').value = ''; document.getElementById('bufferList').innerHTML = '...'; document.getElementById('currentSessionList').innerHTML = ''; setMode('standard'); switchView('view-workout'); document.querySelector('.nav-bar').style.display = 'none'; }
-        function cancelSession() { if(confirm("Annuler ?")) { document.querySelector('.nav-bar').style.display = 'flex'; switchView('view-history'); } }
-        function addSetToBuffer() { let val1 = document.getElementById('inputVal1').value; let val2 = document.getElementById('inputVal2').value; if(!val2) return; bufferSets.push({ val1: parseFloat(val1 || 0), val2: parseFloat(val2), mode: currentMode }); renderBuffer(); }
-        function renderBuffer() { const list = document.getElementById('bufferList'); let html = ''; bufferSets.forEach((s, i) => html += `<div class="set-row">Série ${i+1}: ${s.val2} (${s.mode})</div>`); list.innerHTML = html || '...'; }
-        function confirmExercise() { const name = document.getElementById('exoName').value; if(!name || bufferSets.length === 0) return; currentSession.exercises.push({ name: name, sets: [...bufferSets], type: bufferSets[0].mode }); bufferSets = []; document.getElementById('bufferList').innerHTML = 'Ajouté !'; let html = ''; currentSession.exercises.forEach(e => html += `<div class="session-item"><strong>${e.name}</strong> (${e.sets.length} séries)</div>`); document.getElementById('currentSessionList').innerHTML = html; }
-        function finishSession() { const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); db.push(currentSession); localStorage.setItem(DB_KEY, JSON.stringify(db)); alert("Sauvegardé !"); document.querySelector('.nav-bar').style.display = 'flex'; switchView('view-history'); }
-        function renderHistory() { const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); db.sort((a, b) => new Date(b.date) - new Date(a.date)); let html = ''; db.forEach(s => html += `<div class="card"><strong>${new Date(s.date).toLocaleDateString()}</strong><br>${s.exercises.length} exos</div>`); document.getElementById('historyList').innerHTML = html || 'Vide'; }
-        function initStats() { const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); const select = document.getElementById('statExoSelect'); const unique = new Set(); db.forEach(s => s.exercises.forEach(e => unique.add(e.name))); select.innerHTML = ''; unique.forEach(n => select.add(new Option(n, n))); if(unique.size > 0) updateChart(); }
-        function updateChart() { const exo = document.getElementById('statExoSelect').value; const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]'); db.sort((a,b)=>new Date(a.date)-new Date(b.date)); const labels=[], data=[]; db.forEach(s => { const m = s.exercises.find(e=>e.name===exo); if(m) { labels.push(new Date(s.date).toLocaleDateString()); data.push(Math.max(...m.sets.map(x=>x.val1||x.val2))); } }); if(myChart) myChart.destroy(); const ctx = document.getElementById('progChart').getContext('2d'); myChart = new Chart(ctx, { type:'line', data:{labels, datasets:[{label:'Perf', data, borderColor:'orange'}]} }); }
     </script>
 </body>
 </html>
